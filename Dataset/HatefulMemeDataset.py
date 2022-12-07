@@ -5,16 +5,17 @@ from PIL import Image
 
 
 class HatefulMemeDataset(torch.utils.data.Dataset):
-    def __init__(self,data_path) -> None:
+    def __init__(self,data_path,data_type) -> None:
         super().__init__()
-        self.data = [json.loads(l) for l in open(data_path)]
-        self.data_dir = os.path.dirname(data_path)
+        self.data = [json.loads(l) for l in open(os.path.join(data_path,data_type+'.jsonl'))]
+        self.data_dir = data_path
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, index):
         # Load images on the fly.
+        print(os.path.join(self.data_dir, self.data[index]["img"]))
         image = Image.open(os.path.join(self.data_dir, self.data[index]["img"])).convert("RGB")
         text = self.data[index]["text"]
         label = self.data[index]["label"]
