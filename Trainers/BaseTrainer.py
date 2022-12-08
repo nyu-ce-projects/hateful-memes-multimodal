@@ -5,16 +5,11 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
-from torch.utils.data import DataLoader
-
-import torchvision
-import torchvision.transforms as transforms
 
 import os
 
 import time
 
-from Dataset.HatefulMemeDataset import HatefulMemeDataset
 
 
 class BaseTrainer():
@@ -29,7 +24,6 @@ class BaseTrainer():
         self.n_gpus = 1
         self.best_acc = 0
         self.set_device()
-        self.load_dataset()
         
     def getTrainableParams(self):
         self.totalTrainableParams = 0
@@ -53,17 +47,7 @@ class BaseTrainer():
         print(self.device)
 
     def load_dataset(self):
-        
-        # Data
-        print('==> Preparing data..')
-        train_dataset = HatefulMemeDataset('./data','train')
-        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers)
-
-        dev_dataset = HatefulMemeDataset('./data','dev')
-        self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers)
-
-        test_dataset = HatefulMemeDataset('./data','test')
-        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers)
+        raise NotImplementedError
         
     def setup_optimizer_losses(self):
         self.criterion = nn.CrossEntropyLoss()
