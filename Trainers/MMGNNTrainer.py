@@ -10,7 +10,8 @@ from Dataset.HatefulMemeDataset import HatefulMemeDataset,collate_fn
 from torch.utils.data import DataLoader
 
 from torch_geometric.data import Data
-
+from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
+import numpy as np
 
 PROJECTION_DIM = 256
 
@@ -59,8 +60,10 @@ class CLIPGNNTrainer(BaseTrainer):
     def train_epoch(self,epoch):
         self.setTrain()
         train_loss = 0
-        correct = 0
         total = 0
+        preds = []
+        proba = []
+        out_label_ids = []
         for images, tokenized_text, attention_masks, labels in self.train_loader:
             images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
@@ -79,21 +82,31 @@ class CLIPGNNTrainer(BaseTrainer):
             self.optimizer.step()
             
             # Metrics Calculation
+            preds = np.append(preds, torch.sigmoid(outputs[0]).detach().cpu().numpy() > 0.5, axis=0)
+            proba = np.append(proba, torch.sigmoid(outputs[0]).detach().cpu().numpy(), axis=0)
+            out_label_ids = np.append(out_label_ids, labels.detach().cpu().numpy(), axis=0)
+
             train_loss += loss.item()
             total += labels.size(0)
-
-            _, predicted = outputs.max(1)
-            correct += predicted.eq(labels).sum().item()
-    
-        acc = 100.*correct/total
-            
-        print("Training --- Epoch : {} | Accuracy : {} | Loss : {}".format(epoch,acc,train_loss/total))    
+        result =  {
+            "loss": train_loss/total,
+            "accuracy": accuracy_score(out_label_ids, preds),
+            "AUC": roc_auc_score(out_label_ids, proba),
+            "micro_f1": f1_score(out_label_ids, preds, average="micro"),
+            "prediction": preds,
+            "labels": out_label_ids,
+            "proba": proba
+        }
+        print("Training --- Epoch : {} | Accuracy : {} | Loss : {} | AUC : {}".format(epoch,result['accuracy'],result['loss'],result['AUC']))    
+        return result
 
     def evaluate(self, epoch):
         self.setEval()
         test_loss = 0
-        correct = 0
         total = 0
+        preds = []
+        proba = []
+        out_label_ids = []
         with torch.no_grad():
             for images, tokenized_text, attention_masks, labels in self.dev_loader:
                 images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
@@ -107,15 +120,24 @@ class CLIPGNNTrainer(BaseTrainer):
 
                 loss = self.criterion(outputs[0], labels)
 
+                # Metrics Calculation
                 test_loss += loss.item()
-                _, predicted = outputs.max(1)
                 total += labels.size(0)
-                correct += predicted.eq(labels).sum().item()
+                preds = np.append(preds, torch.sigmoid(outputs[0]).detach().cpu().numpy() > 0.5, axis=0)
+                proba = np.append(proba, torch.sigmoid(outputs[0]).detach().cpu().numpy(), axis=0)
+                out_label_ids = np.append(out_label_ids, labels.detach().cpu().numpy(), axis=0)
 
-        acc = 100.*correct/total
-
-        print("Training --- Epoch : {} | Accuracy : {} | Loss : {}".format(epoch,acc,test_loss/total))     
-        return
+        result =  {
+            "loss": test_loss/total,
+            "accuracy": accuracy_score(out_label_ids, preds),
+            "AUC": roc_auc_score(out_label_ids, proba),
+            "micro_f1": f1_score(out_label_ids, preds, average="micro"),
+            "prediction": preds,
+            "labels": out_label_ids,
+            "proba": proba
+        }
+        print("Testing --- Epoch : {} | Accuracy : {} | Loss : {} | AUC : {}".format(epoch,result['accuracy'],result['loss'],result['AUC']))    
+        return result
 
 
     def generate_subgraph(self,image_embeddings,text_embeddings):
