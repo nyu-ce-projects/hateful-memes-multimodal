@@ -82,7 +82,7 @@ class BaseTrainer():
                 self.train_epoch(epoch)
                 self.evaluate(epoch)
                 self.scheduler.step()
-                # self.saveModel(model_version_name,epoch)
+                self.save_checkpoint(model_version_name,epoch)
                 print('*' * 89)
         except KeyboardInterrupt:
             print('-' * 89)
@@ -93,50 +93,14 @@ class BaseTrainer():
 
     def evaluate(self,epoch):
         raise NotImplementedError
-        # self.net.eval()
-        # test_loss = 0
-        # correct = 0
-        # total = 0
-        # with torch.no_grad():
-        #     for padded_text, attention_masks, labels in dataloader:
-        #         padded_text, attention_masks, labels = padded_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
-            
-        #         outputs = self.net(padded_text,attention_masks)
-        #         loss = self.criterion(outputs, labels)
 
-        #         test_loss += loss.item()
-        #         _, predicted = outputs.max(1)
-        #         total += labels.size(0)
-        #         correct += predicted.eq(labels).sum().item()
-
-        # acc = 100.*correct/total
-            
-        # return acc,test_loss/total
-    
-    # def saveCheckpoint(self,epoch,acc):
-    #     # Save checkpoint.
-    #     if acc > self.best_acc:
-    #         print('Saving..')
-    #         state = {
-    #             'net': self.net.state_dict(),
-    #             'acc': acc,
-    #             'epoch': epoch,
-    #         }
-    #         if not os.path.isdir('checkpoint'):
-    #             os.mkdir('checkpoint')
-    #         torch.save(state, './checkpoint/ckpt.pth')
-    #         self.best_acc = acc
-
-    # def saveModel(self):
-    #     outpath = os.path.join(self.config['model_path'],self.config['model_name'], "weights_{}".format(self.epoch))
-    #     if not os.path.exists(outpath):
-    #         os.makedirs(outpath)
-    #     for name, model in self.models.items():
-    #         savePath = os.path.join(outpath, "{}.pth".format(name))
-    #         toSave = model.state_dict()
-    #         if name == "encoder":
-    #             toSave["height"] = self.height
-    #             toSave["width"] = self.width
-    #         torch.save(toSave, savePath)
-    #     savePath = os.path.join(outpath, "adam.pth")
-    #     torch.save(self.optimizer.state_dict(), savePath)
+    def save_checkpoint(self,model_version_name,epoch):
+        outpath = os.path.join('./checkpoints',self.args.model_name, model_version_name, "weights_{}".format(epoch))
+        if not os.path.exists(outpath):
+            os.makedirs(outpath)
+        for name, model in self.models.items():
+            savePath = os.path.join(outpath, "{}.pth".format(name))
+            toSave = model.state_dict()
+            torch.save(toSave, savePath)
+        savePath = os.path.join(outpath, "adam.pth")
+        torch.save(self.optimizer.state_dict(), savePath)

@@ -81,3 +81,24 @@ class CLIPGNNTrainer(BaseTrainer):
         acc = 100.*correct/total
             
         print("Backdoor Training --- Epoch : {} | Accuracy : {} | Loss : {}".format(epoch,acc,train_loss/total))    
+
+    def evaluate(self, epoch):
+        self.setEval()
+        test_loss = 0
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for padded_text, attention_masks, labels in dataloader:
+                padded_text, attention_masks, labels = padded_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
+            
+                outputs = self.net(padded_text,attention_masks)
+                loss = self.criterion(outputs, labels)
+
+                test_loss += loss.item()
+                _, predicted = outputs.max(1)
+                total += labels.size(0)
+                correct += predicted.eq(labels).sum().item()
+
+        acc = 100.*correct/total
+            
+        return acc,test_loss/total
