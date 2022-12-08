@@ -6,12 +6,9 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
-from torch.nn.utils import clip_grad_norm_
 
 import torchvision
 import torchvision.transforms as transforms
-
-import transformers
 
 import os
 
@@ -106,8 +103,7 @@ class BaseTrainer():
         except KeyboardInterrupt:
             print('-' * 89)
             print('Exiting from training early')
-        
-        
+             
     def train_epoch(self,epoch):
         raise NotImplementedError
 
