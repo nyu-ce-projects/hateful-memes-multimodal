@@ -5,9 +5,12 @@ from Trainers.BaseTrainer import BaseTrainer
 from Models.Encoder import ImageEncoder,TextEncoder,ProjectionHead
 from Models.GCN import GCN,GCNClassifier
 from transformers import AutoTokenizer
-from Dataset.HatefulMemeDataset import HatefulMemeDataset
+from Dataset.HatefulMemeDataset import HatefulMemeDataset,collate_fn
 
 from torch.utils.data import DataLoader
+
+from torch_geometric.data import Data
+
 
 PROJECTION_DIM = 256
 
@@ -31,15 +34,14 @@ class CLIPGNNTrainer(BaseTrainer):
         )
         model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
         tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
-        train_dataset = HatefulMemeDataset('./data','train',image_transform,)
-        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers)
+        train_dataset = HatefulMemeDataset('./data','train',image_transform,tokenizer)
+        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=collate_fn)
 
-        dev_dataset = HatefulMemeDataset('./data','dev')
-        self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers)
+        dev_dataset = HatefulMemeDataset('./data','dev',image_transform,tokenizer)
+        self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=collate_fn)
 
-        test_dataset = HatefulMemeDataset('./data','test')
-        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers)
-        
+        test_dataset = HatefulMemeDataset('./data','test',image_transform,tokenizer)
+        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=collate_fn)
 
     def build_model(self):
         # Model
@@ -59,13 +61,18 @@ class CLIPGNNTrainer(BaseTrainer):
         train_loss = 0
         correct = 0
         total = 0
-        for image, text, label in self.train_loader:
-            padded_text, attention_masks, labels = padded_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
+        for images, tokenized_text, attention_masks, labels in self.train_loader:
+            images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
             self.optimizer.zero_grad()
-            
-            outputs = self.net(padded_text, attention_masks)
-            loss = self.criterion(outputs, labels)
+            image_embeddings = self.models['image_projection'](self.models['image_encoder'](images))
+            text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
+
+            g_data = self.generate_subgraph(image_embeddings,text_embeddings)
+
+            outputs = self.models['graph'](g_data.x,g_data.edge_index)
+
+            loss = self.criterion(outputs[0], labels)
             loss.backward()
             
 
@@ -80,7 +87,7 @@ class CLIPGNNTrainer(BaseTrainer):
     
         acc = 100.*correct/total
             
-        print("Backdoor Training --- Epoch : {} | Accuracy : {} | Loss : {}".format(epoch,acc,train_loss/total))    
+        print("Training --- Epoch : {} | Accuracy : {} | Loss : {}".format(epoch,acc,train_loss/total))    
 
     def evaluate(self, epoch):
         self.setEval()
@@ -88,11 +95,17 @@ class CLIPGNNTrainer(BaseTrainer):
         correct = 0
         total = 0
         with torch.no_grad():
-            for padded_text, attention_masks, labels in dataloader:
-                padded_text, attention_masks, labels = padded_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
+            for images, tokenized_text, attention_masks, labels in self.dev_loader:
+                images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
-                outputs = self.net(padded_text,attention_masks)
-                loss = self.criterion(outputs, labels)
+                image_embeddings = self.models['image_projection'](self.models['image_encoder'](images))
+                text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
+
+                g_data = self.generate_subgraph(image_embeddings,text_embeddings)
+
+                outputs = self.models['graph'](g_data.x,g_data.edge_index)
+
+                loss = self.criterion(outputs[0], labels)
 
                 test_loss += loss.item()
                 _, predicted = outputs.max(1)
@@ -100,5 +113,16 @@ class CLIPGNNTrainer(BaseTrainer):
                 correct += predicted.eq(labels).sum().item()
 
         acc = 100.*correct/total
-            
-        return acc,test_loss/total
+
+        print("Training --- Epoch : {} | Accuracy : {} | Loss : {}".format(epoch,acc,test_loss/total))     
+        return
+
+
+    def generate_subgraph(self,image_embeddings,text_embeddings):
+        edge_index = torch.tensor([[0, 1],[1, 0]], dtype=torch.long)
+        x = torch.cat([image_embeddings,text_embeddings], 0)
+
+
+        data = Data(x=x, edge_index=edge_index).to(self.device)
+
+        return data
