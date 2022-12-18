@@ -16,7 +16,7 @@ class HatefulMemeDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         # Load images on the fly.
-        print(os.path.join(self.data_dir, self.data[index]["img"]))
+        # print(os.path.join(self.data_dir, self.data[index]["img"]))
         image = Image.open(os.path.join(self.data_dir, self.data[index]["img"])).convert("RGB")
         text = self.data[index]["text"]
         label = self.data[index]["label"]

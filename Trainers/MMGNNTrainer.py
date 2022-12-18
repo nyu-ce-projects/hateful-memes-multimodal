@@ -6,7 +6,7 @@ from Trainers.BaseTrainer import BaseTrainer
 from Models.Encoder import ImageEncoder,TextEncoder,ProjectionHead
 from Models.GCN import GCN,GCNClassifier
 from transformers import AutoTokenizer
-from Dataset.HatefulMemeDataset import HatefulMemeDataset,collate_fn
+from Dataset.HatefulMemeDataset import HatefulMemeDataset
 
 from torch.utils.data import DataLoader
 from torch_geometric.data import Data
@@ -14,6 +14,7 @@ from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
 import numpy as np
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import DataLoader as GDataLoader
+from torch_geometric.nn import to_hetero
 
 PROJECTION_DIM = 256
 
@@ -38,17 +39,18 @@ class MMGNNTrainer(BaseTrainer):
         model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
         tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
         train_dataset = HatefulMemeDataset('./data','train',image_transform,tokenizer)
-        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=collate_fn)
+        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=train_dataset.collate_fn)
 
         dev_dataset = HatefulMemeDataset('./data','dev',image_transform,tokenizer)
-        self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=collate_fn)
+        self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=dev_dataset.collate_fn)
 
         test_dataset = HatefulMemeDataset('./data','test',image_transform,tokenizer)
-        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=collate_fn)
+        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=test_dataset.collate_fn)
 
     def build_model(self):
         # Model
         print('==> Building model..')
+        self.models = {}
         self.models['image_encoder'] = ImageEncoder().to(self.device)
         self.models['text_encoder'] = TextEncoder().to(self.device)
         self.models['image_projection'] = ProjectionHead(2048,PROJECTION_DIM).to(self.device)
@@ -74,9 +76,9 @@ class MMGNNTrainer(BaseTrainer):
             
             text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
             image_embeddings = self.get_image_feature_embeddings(images)
-            g_data = self.generate_subgraph(images,image_embeddings,text_embeddings)
-
-            outputs = self.models['graph'](g_data.x,g_data.edge_index)
+            g_data_loader = self.generate_subgraph(images,image_embeddings,text_embeddings)
+            for g_data in g_data_loader:
+                outputs = to_hetero(self.models['graph'],g_data.metadata(),aggr='sum')
 
             loss = self.criterion(outputs[0], labels) #using nll_loss
             loss.backward()
@@ -166,7 +168,7 @@ class MMGNNTrainer(BaseTrainer):
             data['image_node','has','image_feature_embeddings'].edge_index = torch.tensor([[0]*(n_img_features),[i for i in range(n_img_features)]],dtype=torch.long)
             data['text_embeddings','associated','image_feature_embeddings'].edge_index = torch.tensor([[0]*(n_img_features),[i for i in range(n_img_features)]],dtype=torch.long)
 
-            data.validate(raise_on_error=True)
+            # data.validate(raise_on_error=True)
             data_list.append(data)
-        loader = GDataLoader(data_list, batch_size=self.batch_size)
-        return loader
+        # loader = GDataLoader(data_list, batch_size=self.batch_size)
+        return data_list
