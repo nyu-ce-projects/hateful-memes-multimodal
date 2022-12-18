@@ -3,7 +3,7 @@ from torch_geometric.nn import GATConv
 import torch.nn.functional as F
 
 class GAT(torch.nn.Module):
-    def __init__(self,num_features,num_classes,training=True):
+    def __init__(self,num_features,num_classes=2,training=True):
         super(GAT, self).__init__()
         self.training = training
         self.hid = 8

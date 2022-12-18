@@ -1,6 +1,7 @@
 import torch
 import torch.backends.cudnn as cudnn
 import torchvision
+from torchvision import models
 from Trainers.BaseTrainer import BaseTrainer
 from Models.Encoder import ImageEncoder,TextEncoder,ProjectionHead
 from Models.GCN import GCN,GCNClassifier
@@ -8,10 +9,11 @@ from transformers import AutoTokenizer
 from Dataset.HatefulMemeDataset import HatefulMemeDataset,collate_fn
 
 from torch.utils.data import DataLoader
-
 from torch_geometric.data import Data
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
 import numpy as np
+from torch_geometric.data import HeteroData
+from torch_geometric.loader import DataLoader as GDataLoader
 
 PROJECTION_DIM = 256
 
@@ -52,6 +54,7 @@ class CLIPGNNTrainer(BaseTrainer):
         self.models['image_projection'] = ProjectionHead(2048,PROJECTION_DIM).to(self.device)
         self.models['text_projection'] = ProjectionHead(768,PROJECTION_DIM).to(self.device)
         self.models['graph'] = GCNClassifier(PROJECTION_DIM,2).to(self.device)
+        self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True).to(self.device).eval()
         if self.device in ['cuda','mps']:
             for key, model in self.models.items():
                 self.models[key] = torch.nn.DataParallel(model)
@@ -68,14 +71,14 @@ class CLIPGNNTrainer(BaseTrainer):
             images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
             self.optimizer.zero_grad()
-            image_embeddings = self.models['image_projection'](self.models['image_encoder'](images))
+            
             text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
-
-            g_data = self.generate_subgraph(image_embeddings,text_embeddings)
+            image_embeddings = self.get_image_feature_embeddings(images)
+            g_data = self.generate_subgraph(images,image_embeddings,text_embeddings)
 
             outputs = self.models['graph'](g_data.x,g_data.edge_index)
 
-            loss = self.criterion(outputs[0], labels)
+            loss = self.criterion(outputs[0], labels) #using nll_loss
             loss.backward()
             
 
@@ -139,12 +142,31 @@ class CLIPGNNTrainer(BaseTrainer):
         print("Testing --- Epoch : {} | Accuracy : {} | Loss : {} | AUC : {}".format(epoch,result['accuracy'],result['loss'],result['AUC']))    
         return result
 
+    def get_image_feature_embeddings(self,imgTensors):
+        # masks = []
+        embeddings = []
+        outputs = self.imgfeatureModel(imgTensors)
+        for i,output in enumerate(outputs):
+            # masks.append(output['masks']*imgTensors[i])
+            embd = self.models['image_projection'](self.models['image_encoder'](output['masks']*imgTensors[i]))
+            embeddings.append(embd)
+        
+        return embeddings
 
-    def generate_subgraph(self,image_embeddings,text_embeddings):
-        edge_index = torch.tensor([[0, 1],[1, 0]], dtype=torch.long)
-        x = torch.cat([image_embeddings,text_embeddings], 0)
 
+    def generate_subgraph(self,images,image_embeddings,text_embeddings):
+        data_list = []
+        for i in range(len(image_embeddings)):
+            data = HeteroData().to(self.device)
 
-        data = Data(x=x, edge_index=edge_index).to(self.device)
+            data['image_node'].node_id = [0]
+            data['text_embeddings'].x = text_embeddings[i].unsqueeze(0)
+            data['image_feature_embeddings'].x = image_embeddings[i]
+            n_img_features = len(image_embeddings[i])
+            data['image_node','has','image_feature_embeddings'].edge_index = torch.tensor([[0]*(n_img_features),[i for i in range(n_img_features)]],dtype=torch.long)
+            data['text_embeddings','associated','image_feature_embeddings'].edge_index = torch.tensor([[0]*(n_img_features),[i for i in range(n_img_features)]],dtype=torch.long)
 
-        return data
+            data.validate(raise_on_error=True)
+            data_list.append(data)
+        loader = GDataLoader(data_list, batch_size=self.batch_size)
+        return loader
