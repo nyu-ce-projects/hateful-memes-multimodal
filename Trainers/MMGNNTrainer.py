@@ -17,7 +17,7 @@ from torch_geometric.loader import DataLoader as GDataLoader
 
 PROJECTION_DIM = 256
 
-class CLIPGNNTrainer(BaseTrainer):
+class MMGNNTrainer(BaseTrainer):
     def __init__(self, args) -> None:
         super().__init__(args)
 
