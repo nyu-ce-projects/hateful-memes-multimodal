@@ -3,7 +3,7 @@ import torch.backends.cudnn as cudnn
 import torchvision
 from torchvision import models
 from Trainers.BaseTrainer import BaseTrainer
-from Models.Encoder import ImageEncoder,TextEncoder,ProjectionHead
+from Models import ImageEncoder,TextEncoder,ProjectionHead
 from Models.GCN import GCN,GCNClassifier
 from transformers import AutoTokenizer
 from Dataset.HatefulMemeDataset import HatefulMemeDataset
@@ -14,7 +14,6 @@ from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
 import numpy as np
 from torch_geometric.data import HeteroData
 from torch_geometric.loader import DataLoader as GDataLoader
-from torch_geometric.nn import to_hetero
 
 PROJECTION_DIM = 256
 
@@ -77,10 +76,12 @@ class MMGNNTrainer(BaseTrainer):
             text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
             image_embeddings = self.get_image_feature_embeddings(images)
             g_data_loader = self.generate_subgraph(images,image_embeddings,text_embeddings)
-            for g_data in g_data_loader:
-                outputs = to_hetero(self.models['graph'],g_data.metadata(),aggr='sum')
+            
+            for batch 
 
-            loss = self.criterion(outputs[0], labels) #using nll_loss
+            outputs = self.models['graph'](g_data.x_dict,g_data.edge_index_dict)
+
+            loss = self.criterion(outputs[0], labels)
             loss.backward()
             
 
@@ -160,7 +161,7 @@ class MMGNNTrainer(BaseTrainer):
         data_list = []
         for i in range(len(image_embeddings)):
             data = HeteroData().to(self.device)
-
+            # [41,1,256,256] => [[41, 3,256,256]]
             data['image_node'].node_id = [0]
             data['text_embeddings'].x = text_embeddings[i].unsqueeze(0)
             data['image_feature_embeddings'].x = image_embeddings[i]
@@ -170,5 +171,5 @@ class MMGNNTrainer(BaseTrainer):
 
             # data.validate(raise_on_error=True)
             data_list.append(data)
-        # loader = GDataLoader(data_list, batch_size=self.batch_size)
-        return data_list
+        loader = GDataLoader(data_list, batch_size=self.batch_size)
+        return loader
