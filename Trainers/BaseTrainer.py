@@ -16,6 +16,7 @@ class BaseTrainer():
     def __init__(self,args) -> None:
         print(args)
         self.args = args
+        self.model_name = 'mmgcn'
         self.lr = self.args.lr
         self.optim = self.args.optim
         self.num_workers = args.workers
@@ -50,13 +51,13 @@ class BaseTrainer():
         raise NotImplementedError
         
     def setup_optimizer_losses(self):
-        self.criterion = nn.BCEWithLogitsLoss() #nn.CrossEntropyLoss()
+        self.criterion = nn.BCEWithLogitsLoss()  #BCEWithLogitsLoss() #nn.CrossEntropyLoss()
         if self.optim=='SGD':
             self.optimizer = optim.SGD(self.trainableParameters, lr=self.lr,momentum=0.9, weight_decay=5e-4)
         elif self.optim=='SGDN':
             self.optimizer = optim.SGD(self.trainableParameters, lr=self.lr,momentum=0.9, weight_decay=5e-4,nesterov=True)
         else:
-            self.optimizer = eval("optim."+self.optim)(self.trainableParameters, lr=self.lr, weight_decay=0)
+            self.optimizer = eval("optim."+self.optim)(self.trainableParameters, lr=self.lr, weight_decay=5e-4)
         print(self.optimizer) 
         # num_warmup_steps = self.warmup_epochs * len(self.poison_train_loader)
         # num_training_steps = (self.warmup_epochs+self.epochs) * len(self.poison_train_loader)
@@ -94,13 +95,20 @@ class BaseTrainer():
     def evaluate(self,epoch):
         raise NotImplementedError
 
-    def save_checkpoint(self,model_version_name,epoch):
-        outpath = os.path.join('./checkpoints',self.args.model_name, model_version_name, "weights_{}".format(epoch))
-        if not os.path.exists(outpath):
-            os.makedirs(outpath)
-        for name, model in self.models.items():
-            savePath = os.path.join(outpath, "{}.pth".format(name))
-            toSave = model.state_dict()
-            torch.save(toSave, savePath)
-        savePath = os.path.join(outpath, "adam.pth")
-        torch.save(self.optimizer.state_dict(), savePath)
+    def save_checkpoint(self,model_version_name,acc):
+        try:
+            outpath = os.path.join('./checkpoints',self.model_name, str(model_version_name))
+            if not os.path.exists(outpath):
+                os.makedirs(outpath)
+            if acc > self.best_acc:
+                print('Saving..')
+                for name, model in self.models.items():
+                    savePath = os.path.join(outpath, "{}.pth".format(name))
+                    toSave = model.state_dict()
+                    torch.save(toSave, savePath)
+                savePath = os.path.join(outpath, "optimizer.pth")
+                torch.save(self.optimizer.state_dict(), savePath)
+                self.best_acc = acc
+                print("best accuracy:", acc)
+        except Exception as e:
+            print("Error:",e)

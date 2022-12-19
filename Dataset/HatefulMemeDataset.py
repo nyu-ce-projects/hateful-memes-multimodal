@@ -42,6 +42,6 @@ class HatefulMemeDataset(torch.utils.data.Dataset):
         
 
         #Label Tensor
-        label_tensor = torch.stack([torch.tensor([row[2]],dtype=torch.long) for row in batch])
+        label_tensor = torch.stack([torch.tensor([row[2]],dtype=torch.float32) for row in batch])
 
         return tensor_img,text_tensor,attention_mask,label_tensor

@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=4
-#SBATCH --gres=gpu:v100:1
-#SBATCH --time=00:10:00
-#SBATCH --mem=16GB
+#SBATCH --cpus-per-task=8
+#SBATCH --gres=gpu:a100:1
+#SBATCH --time=24:10:00
+#SBATCH --mem=32GB
 #SBATCH --job-name=mmgnn
 #SBATCH --output=./logs/mmgnn_%j.out
 
@@ -15,4 +15,4 @@ conda activate hpml-env
 
 cd /scratch/am11533/multimodal-gnn-attn
 
-python main.py --batchsize 128 --epochs 10 --lr=0.01
+python main.py --batchsize 16 --epochs 20 --optim Adam

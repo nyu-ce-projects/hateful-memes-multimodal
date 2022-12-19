@@ -3,6 +3,8 @@ from torch import Tensor
 from torch.nn import Linear
 from torch_geometric.nn import GCNConv
 import torch.nn.functional as F
+from torch_geometric.nn import global_mean_pool
+
 
 
 class GCN(torch.nn.Module):
@@ -29,7 +31,7 @@ class GCNClassifier(torch.nn.Module):
         self.conv3 = GCNConv(64, 16)
         self.classifier = Linear(16, num_classes)
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, batch):
         h = self.conv1(x, edge_index)
         h = h.tanh()
         h = self.conv2(h, edge_index)
@@ -37,7 +39,11 @@ class GCNClassifier(torch.nn.Module):
         h = self.conv3(h, edge_index)
         h = h.tanh()  # Final GNN embedding space.
         
-        # Apply a final (linear) classifier.
-        out = self.classifier(h)
+        # 2. Readout layer
+        h = global_mean_pool(h, batch)  # [batch_size, hidden_channels]
 
-        return out, h
+        # 3. Apply a final classifier
+        h = F.dropout(h, p=0.5, training=True)
+        out = self.classifier(h)
+        out = out.view(-1)
+        return out, h,

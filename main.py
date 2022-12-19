@@ -11,10 +11,12 @@ if __name__ == "__main__":
     parser.add_argument('--workers', '-w',default=2, type=int,help='no of workers')    
     parser.add_argument('--epochs', '-e',default=2, type=int,help='Epochs')
     parser.add_argument('--optim', '-o',default='SGD', type=str,help='optimizer type')
-    parser.add_argument('--batchsize', '-bs',default=32, type=int,help='Batch Size')
+    parser.add_argument('--batchsize', '-bs',default=8, type=int,help='Batch Size')
     args = parser.parse_args()
     
     net = MMGNNTrainer(args)
+    print("============================================")
     net.train()
+
     
     print("Model Training Completed")
