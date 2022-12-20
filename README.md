@@ -1,5 +1,8 @@
 # Exploring Emerging Properties in Multimodal Neural Network 
 
+There has been a sharp increase in the number of people using social media recently. Because of this, there has been an increase in the amount of content posted online. Manual moderation of content online is extremely difficult. To overcome this barrier, many automated moderation techniques have been designed. These techniques work with a singular modality (like text, audio, images, etc.) but suffer in a multi-modal environment where one modality complements one or more modalities implying subtle hate/aggressive speech. To address this problem, various unimodal, as well as multimodal approaches have been proposed. In general vision, only models perform worse than natural language models; with this study, we aim to address this by using novel, unimodal self-supervised techniques and further studying the scope of their expansion to make them fully multimodal. These multimodal self-supervised techniques are able to match the accuracy of fully supervised multimodally finetuned models.
+
+[Paper](https://drive.google.com/drive/u/0/folders/1Kts1qrOYG_ZRTQncWdD95Q1QpAqvZqQS)
 
 ### Dependencies
 - Pytorch
