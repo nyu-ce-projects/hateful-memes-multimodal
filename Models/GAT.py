@@ -1,6 +1,9 @@
 import torch
 from torch_geometric.nn import GATConv
 import torch.nn.functional as F
+from torch_geometric.nn import global_mean_pool
+from torch.nn import Linear
+
 
 class GAT(torch.nn.Module):
     def __init__(self,num_features,num_classes=1,training=True):
@@ -11,8 +14,9 @@ class GAT(torch.nn.Module):
         self.out_head = 1
         
         self.conv1 = GATConv(num_features, self.hid, heads=self.in_head, dropout=0.6)
-        self.conv2 = GATConv(self.hid*self.in_head, num_classes, concat=False,
+        self.conv2 = GATConv(self.hid*self.in_head, 16, concat=False,
                              heads=self.out_head, dropout=0.6)
+        self.classifier = Linear(16, num_classes)
     
     def forward(self,x, edge_index, batch):    
         # Dropout before the GAT layer helps avoid overfitting

@@ -1,0 +1,57 @@
+Some weights of the model checkpoint at distilbert-base-uncased were not used when initializing DistilBertModel: ['vocab_transform.bias', 'vocab_layer_norm.bias', 'vocab_transform.weight', 'vocab_projector.bias', 'vocab_projector.weight', 'vocab_layer_norm.weight']
+- This IS expected if you are initializing DistilBertModel from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DistilBertModel from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+/scratch/am11533/envs_dirs/hpml-env/lib/python3.9/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and will be removed in 0.15, please use 'weights' instead.
+  warnings.warn(
+/scratch/am11533/envs_dirs/hpml-env/lib/python3.9/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and will be removed in 0.15. The current behavior is equivalent to passing `weights=MaskRCNN_ResNet50_FPN_Weights.COCO_V1`. You can also use `weights=MaskRCNN_ResNet50_FPN_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+Some weights of the model checkpoint at distilbert-base-uncased were not used when initializing DistilBertModel: ['vocab_transform.bias', 'vocab_layer_norm.bias', 'vocab_transform.weight', 'vocab_projector.bias', 'vocab_projector.weight', 'vocab_layer_norm.weight']
+- This IS expected if you are initializing DistilBertModel from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DistilBertModel from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Namespace(lr=0.01, resume='./checkpoints/MMSAGE/0.547_0.5/', cpu=False, workers=4, epochs=1, optim='Adam', batchsize=16, model='MMSAGE')
+cuda
+==> Preparing data..
+==> Building model..
+Optimizer: Adam (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    eps: 1e-08
+    foreach: None
+    lr: 0.01
+    maximize: False
+    weight_decay: 0.0005
+)
+==> Resuming from checkpoint..
+./checkpoints/MMSAGE/0.547_0.5/
+==> Building model..
+Optimizer: Adam (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    eps: 1e-08
+    foreach: None
+    lr: 0.01
+    maximize: False
+    weight_decay: 0.0005
+)
+MMSAGE ============================================
+Total Trainable Parameters : 90809121
+  0%|          | 0/1 [00:00<?, ?it/s]Training --- Epoch : 0 | Accuracy : 0.644 | Loss : 0.040945407306446746 | AUC : 0.509
+100%|██████████| 1/1 [18:27<00:00, 1107.47s/it]100%|██████████| 1/1 [18:27<00:00, 1107.47s/it]
+Validation --- Epoch : 0 | Accuracy : 0.5 | Loss : 0.04735685575008392 | AUC : 0.492
+Saving..
+best auc: 0.492
+*****************************************************************************************
+Testing --- Epoch : 0 | Accuracy : 0.625 | Loss : 0.04164826761186123 | AUC : 0.48
+{'loss': 0.04164826761186123, 'accuracy': 0.625, 'auc': 0.48, 'micro_f1': 0.625, 'prediction': array([False, False, False, ..., False, False, False]), 'labels': array([[1.],
+       [1.],
+       [1.],
+       ...,
+       [0.],
+       [0.],
+       [0.]], dtype=float32), 'proba': array([0.3573199 , 0.36724666, 0.34364155, ..., 0.32049128, 0.34730822,
+       0.3677618 ], dtype=float32)}
+Model Training Completed

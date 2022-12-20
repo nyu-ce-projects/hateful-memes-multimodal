@@ -83,11 +83,11 @@ class BaseTrainer():
                 self.scheduler.step()
                 self.save_checkpoint(epoch,metrics)
                 print('*' * 89)
-            unseen_metrics = self.evaluate(epoch, 'Testing', self.test_loader)
-            print(unseen_metrics)
         except KeyboardInterrupt:
             print('-' * 89)
             print('Exiting from training early')
+        unseen_metrics = self.evaluate(epoch, 'Testing', self.test_loader)
+        print(unseen_metrics)
              
     def train_epoch(self,epoch):
         raise NotImplementedError
