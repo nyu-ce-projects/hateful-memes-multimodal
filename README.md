@@ -10,10 +10,14 @@
 - transformers
 - timm
 - tqdm
+- torchcontrib
+- pytorch lightning
 
 
 ### Traing the Unimodal and Multimodal Networks
-Notebook has been provided for these networks in the notebook directory.
+Notebook has been provided for these networks in the `notebook/` directory.
+
+
 
 ### Training the Multimodal Graph Network
 ```
@@ -25,6 +29,7 @@ Graph Models Available:
 - GCN
 - GraphSage
 
+### Results
 
 |Modality| Model| AUROC| Accuracy|
 |:----|:----|:----|:----|
@@ -37,4 +42,6 @@ Graph Models Available:
 |Multimodal GNN|SAGE| 0.481| 0.62|
 
 
+### High Performance Optimization and Benchmark
 
+Performance Benchmark details and script can be found in the `benchmarks/performance-hpc/`
