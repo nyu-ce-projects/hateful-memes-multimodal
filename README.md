@@ -1,1 +1,1 @@
-# multimodal-gnn-attn
+# Exploring Emerging Properties in Multimodal Neural Network 
