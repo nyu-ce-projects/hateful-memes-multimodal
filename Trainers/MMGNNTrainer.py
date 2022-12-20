@@ -1,3 +1,4 @@
+import os
 import torch
 # import torch.backends.cudnn as cudnn
 import torchvision
@@ -9,12 +10,11 @@ from transformers import AutoTokenizer,DistilBertTokenizer
 from Dataset.HatefulMemeDataset import HatefulMemeDataset
 
 from torch.utils.data import DataLoader
-from torch_geometric.data import Data
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
 import numpy as np
 from torch_geometric.data import HeteroData,Data as GraphData
-from torch_geometric.loader import DataLoader as GDataLoader
-from torch_geometric.nn import to_hetero
+from torch_geometric.loader import DataLoader as GDataLoader,DataListLoader
+from torch_geometric.nn import to_hetero,DataParallel
 import torch_geometric.transforms as T
 
 from tqdm import tqdm
@@ -30,8 +30,8 @@ class MMGNNTrainer(BaseTrainer):
         self.build_model()
         self.getTrainableParams()
         self.setup_optimizer_losses()
-        # if args.resume:
-        #     self.load_checkpoint()
+        if args.resume:
+            self.load_checkpoint()
 
     def load_dataset(self):
         # Data
@@ -66,9 +66,11 @@ class MMGNNTrainer(BaseTrainer):
         self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True).to(self.device).eval()
         if self.device in ['cuda','mps']:
             for key, model in self.models.items():
-                self.models[key] = torch.nn.DataParallel(model)
+                if key!='graph':
+                    self.models[key] = torch.nn.DataParallel(model)
+                else:
+                    self.models[key] = DataParallel(model)
                 # cudnn.benchmark = True
-
     def train_epoch(self,epoch):
         self.setTrain()
         train_loss = 0
@@ -76,7 +78,7 @@ class MMGNNTrainer(BaseTrainer):
         preds = None
         proba = None
         out_label_ids = None
-        for images, tokenized_text, attention_masks, labels in self.train_loader:
+        for images, tokenized_text, attention_masks, labels in tqdm(self.train_loader):
             images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
             self.optimizer.zero_grad()
@@ -116,20 +118,17 @@ class MMGNNTrainer(BaseTrainer):
 
             train_loss += loss.item()
             total += labels.size(0)
-            del g_data_loader
-        result =  {
-            "loss": train_loss/total,
-            "accuracy": accuracy_score(out_label_ids, preds),
-            "AUC": roc_auc_score(out_label_ids, proba),
-            "micro_f1": f1_score(out_label_ids, preds, average="micro"),
-            "prediction": preds,
-            "labels": out_label_ids,
-            "proba": proba
-        }
-        print("Training --- Epoch : {} | Accuracy : {} | Loss : {} | AUC : {}".format(epoch,result['accuracy'],result['loss'],result['AUC']))    
-        return result
 
-    def evaluate(self, epoch, data_loader):
+        metrics =  {
+            "loss": train_loss/total,
+            "accuracy": round(accuracy_score(out_label_ids, preds),3),
+            "auc": round(roc_auc_score(out_label_ids, proba),3),
+            "micro_f1": round(f1_score(out_label_ids, preds, average="micro"),3)
+        }
+        print("Training --- Epoch : {} | Accuracy : {} | Loss : {} | AUC : {}".format(epoch,metrics['accuracy'],metrics['loss'],metrics['auc']))    
+        return metrics
+
+    def evaluate(self, epoch, data_type, data_loader):
         self.setEval()
         test_loss = 0
         total = 0
@@ -137,7 +136,7 @@ class MMGNNTrainer(BaseTrainer):
         proba = None
         out_label_ids = None
         with torch.no_grad():
-            for images, tokenized_text, attention_masks, labels in data_loader:
+            for images, tokenized_text, attention_masks, labels in tqdm(data_loader):
                 images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
                 text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
@@ -145,11 +144,11 @@ class MMGNNTrainer(BaseTrainer):
                 image_embeddings = self.models['image_projection'](self.models['image_encoder'](images))
                 g_data_loader = self.generate_subgraph(image_embeddings,image_feat_embeddings,text_embeddings,labels)
                 
-                g_data = next(iter(g_data_loader))
-                
-                outputs = self.models['graph'](g_data.x,g_data.edge_index,g_data.batch)
-                # print(outputs[0],g_data.y)
-                loss = self.criterion(outputs[0], g_data.y)
+
+                for g_data in g_data_loader:
+                    outputs = self.models['graph'](g_data.x,g_data.edge_index,g_data.batch)
+                    loss = self.criterion(outputs[0], g_data.y)
+                    test_loss += loss.item()
 
                 # Metrics Calculation
                 if preds is None:
@@ -166,34 +165,30 @@ class MMGNNTrainer(BaseTrainer):
                 else:
                     out_label_ids = np.append(out_label_ids, labels.detach().cpu().numpy(), axis=0)
 
-                test_loss += loss.item()
                 total += labels.size(0)
 
         result =  {
             "loss": test_loss/total,
-            "accuracy": accuracy_score(out_label_ids, preds),
-            "AUC": roc_auc_score(out_label_ids, proba),
-            "micro_f1": f1_score(out_label_ids, preds, average="micro"),
+            "accuracy": round(accuracy_score(out_label_ids, preds),3),
+            "auc": round(roc_auc_score(out_label_ids, proba),3),
+            "micro_f1": round(f1_score(out_label_ids, preds, average="micro"),3),
             "prediction": preds,
             "labels": out_label_ids,
             "proba": proba
         }
-        print("Testing --- Epoch : {} | Accuracy : {} | Loss : {} | AUC : {}".format(epoch,result['accuracy'],result['loss'],result['AUC']))    
+        print("{} --- Epoch : {} | Accuracy : {} | Loss : {} | AUC : {}".format(data_type, epoch,result['accuracy'],result['loss'],result['auc']))    
         return result
 
     def get_image_feature_embeddings(self,imgTensors):
-        # masks = []
         embeddings = []
         outputs = self.imgfeatureModel(imgTensors)
         for i,output in enumerate(outputs):
-            indices = torch.argsort(output['scores'])[-5:] #get top 10 features
+            indices = torch.argsort(output['scores'])[-10:] #get top 10 features
             masks = output['masks'][indices]
-            # masks.append(output['masks']*imgTensors[i])
             embd = self.models['image_projection'](self.models['image_encoder'](masks*imgTensors[i]))
             embeddings.append(embd)
         
         return embeddings
-
 
     def generate_hetero_subgraph(self,images,image_embeddings,text_embeddings):
         data_list = []
@@ -228,6 +223,26 @@ class MMGNNTrainer(BaseTrainer):
             data = T.ToUndirected()(data)
             data = T.NormalizeFeatures()(data)
             data_list.append(data)
-        # print(len(data_list))
-        loader = GDataLoader(data_list, batch_size=self.batch_size)
+        
+        loader = DataListLoader(data_list, batch_size=self.batch_size)
         return loader
+
+    def load_checkpoint(self):
+        try:
+            # Load checkpoint.
+            print('==> Resuming from checkpoint..')
+            checkpoint_dir = self.args.resume
+            print(checkpoint_dir)
+            assert os.path.isdir(checkpoint_dir), 'Error: no checkpoint directory found!'
+
+            model_keys = ['image_encoder','text_encoder','image_projection','text_projection','graph']
+            for key in model_keys:
+                model_path = os.path.join(checkpoint_dir,"{}.pth".format(key))
+                checkpoint = torch.load(model_path,map_location=self.device)
+                remove_prefix = 'module.'
+                state_dict = {k[len(remove_prefix):] if k.startswith(remove_prefix) else k: v for k, v in checkpoint.items()}
+                self.models[key].load_state_dict(state_dict)
+            checkpoint = torch.load(os.path.join(checkpoint_dir,"{}.pth".format(self.optim.lower())))
+            self.optimizer.load_state_dict(checkpoint,strict=False)
+        except Exception as e:
+            print(e)

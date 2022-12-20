@@ -16,7 +16,7 @@ class BaseTrainer():
     def __init__(self,args) -> None:
         print(args)
         self.args = args
-        self.model_name = 'mmgcn'
+        self.model_name = self.args.model
         self.lr = self.args.lr
         self.optim = self.args.optim
         self.num_workers = args.workers
@@ -24,6 +24,7 @@ class BaseTrainer():
         self.batch_size = self.args.batchsize
         self.n_gpus = 1
         self.best_acc = 0
+        self.best_auc = 0
         self.set_device()
         
     def getTrainableParams(self):
@@ -78,11 +79,11 @@ class BaseTrainer():
             model_version_name = int(time.time())
             for epoch in range(self.epochs):
                 self.train_epoch(epoch)
-                metrics = self.evaluate(epoch,self.dev_loader)
+                metrics = self.evaluate(epoch,'Validation', self.dev_loader)
                 self.scheduler.step()
-                self.save_checkpoint(model_version_name,metrics['AUC'])
+                self.save_checkpoint(epoch,metrics)
                 print('*' * 89)
-            unseen_metrics = self.evaluate(epoch, self.test_loader)
+            unseen_metrics = self.evaluate(epoch, 'Testing', self.test_loader)
             print(unseen_metrics)
         except KeyboardInterrupt:
             print('-' * 89)
@@ -94,32 +95,25 @@ class BaseTrainer():
     def evaluate(self,epoch):
         raise NotImplementedError
 
-    def save_checkpoint(self,model_version_name,acc):
+    def save_checkpoint(self,epoch, metrics):
         try:
-            outpath = os.path.join('./checkpoints',self.model_name, str(model_version_name))
-            if not os.path.exists(outpath):
-                os.makedirs(outpath)
-            if acc > self.best_acc:
-                print('Saving..')
-                for name, model in self.models.items():
-                    savePath = os.path.join(outpath, "{}.pth".format(name))
-                    toSave = model.state_dict()
-                    torch.save(toSave, savePath)
-                savePath = os.path.join(outpath, "optimizer.pth")
-                torch.save(self.optimizer.state_dict(), savePath)
-                self.best_acc = acc
-                print("best accuracy:", acc)
+            if metrics['auc'] > self.best_auc:
+                outpath = os.path.join('./checkpoints',self.model_name, "{}_{}".format(metrics['auc'],metrics['accuracy']))
+                if not os.path.exists(outpath):
+                    os.makedirs(outpath)
+                
+                    print('Saving..')
+                    for name, model in self.models.items():
+                        savePath = os.path.join(outpath, "{}.pth".format(name))
+                        toSave = model.state_dict()
+                        torch.save(toSave, savePath)
+                    savePath = os.path.join(outpath, "{}.pth".format(self.optim.lower()))
+                    torch.save(self.optimizer.state_dict(), savePath)
+                    self.best_acc = metrics['accuracy']
+                    self.best_auc = metrics['auc']
+                    print("best auc:", metrics['auc'])
         except Exception as e:
             print("Error:",e)
 
-    # def load_checkpoint(self):
-    #     # Load checkpoint.
-    #     print('==> Resuming from checkpoint..')
-    #     checkpoint_dir = os.path.join('./checkpoints',self.model_name, str(1671488899))
-    #     print(checkpoint_dir)
-    #     # assert os.path.isdir(checkpoint_dir), 'Error: no checkpoint directory found!'
-    #     checkpoint = torch.load('./checkpoint/{}/ckpt.pth'.format(self.device_name))
-    #     self.net.load_state_dict(checkpoint['net'],strict=False)
-    #     self.optimizer.load_state_dict(checkpoint['optmizer'],strict=False)
-    #     self.best_acc = checkpoint['acc']
-    #     self.epoch = checkpoint['epoch']
+    def load_checkpoint(self):
+        raise NotImplementedError
