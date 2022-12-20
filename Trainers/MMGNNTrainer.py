@@ -4,7 +4,7 @@ import torch
 import torchvision
 from torchvision import models
 from Trainers.BaseTrainer import BaseTrainer
-from Models import ImageEncoder,TextEncoder,ProjectionHead
+from Models.Encoder import ImageEncoder,TextEncoder,ProjectionHead
 from Models.GCN import GCN,GCNClassifier
 from transformers import AutoTokenizer,DistilBertTokenizer
 from Dataset.HatefulMemeDataset import HatefulMemeDataset
