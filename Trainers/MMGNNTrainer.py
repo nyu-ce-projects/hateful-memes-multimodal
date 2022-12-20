@@ -246,6 +246,6 @@ class MMGNNTrainer(BaseTrainer):
                 state_dict = {k[len(remove_prefix):] if k.startswith(remove_prefix) else k: v for k, v in checkpoint.items()}
                 self.models[key].load_state_dict(state_dict)
             checkpoint = torch.load(os.path.join(checkpoint_dir,"{}.pth".format(self.optim.lower())))
-            self.optimizer.load_state_dict(checkpoint,strict=False)
+            self.optimizer.load_state_dict(checkpoint)
         except Exception as e:
             print(e)

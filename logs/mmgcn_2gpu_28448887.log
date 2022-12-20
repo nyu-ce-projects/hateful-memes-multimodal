@@ -1,0 +1,105 @@
+Some weights of the model checkpoint at distilbert-base-uncased were not used when initializing DistilBertModel: ['vocab_layer_norm.weight', 'vocab_projector.weight', 'vocab_projector.bias', 'vocab_transform.weight', 'vocab_transform.bias', 'vocab_layer_norm.bias']
+- This IS expected if you are initializing DistilBertModel from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DistilBertModel from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+/scratch/am11533/envs_dirs/hpml-env/lib/python3.9/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and will be removed in 0.15, please use 'weights' instead.
+  warnings.warn(
+/scratch/am11533/envs_dirs/hpml-env/lib/python3.9/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and will be removed in 0.15. The current behavior is equivalent to passing `weights=MaskRCNN_ResNet50_FPN_Weights.COCO_V1`. You can also use `weights=MaskRCNN_ResNet50_FPN_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+Namespace(lr=0.1, resume=None, cpu=False, workers=4, epochs=20, optim='Adam', batchsize=16, model='MMGCN')
+cuda
+==> Preparing data..
+==> Building model..
+Optimizer: Adam (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    eps: 1e-08
+    foreach: None
+    lr: 0.1
+    maximize: False
+    weight_decay: 0.0005
+)
+MMGCN ============================================
+Total Trainable Parameters : 90767137
+  0%|          | 0/20 [00:00<?, ?it/s]Training --- Epoch : 0 | Accuracy : 0.6 | Loss : 0.02176337859209846 | AUC : 0.493
+  5%|▌         | 1/20 [20:24<6:27:43, 1224.39s/it]Validation --- Epoch : 0 | Accuracy : 0.494 | Loss : 0.025386454820632936 | AUC : 0.461
+Saving..
+best auc: 0.461
+*****************************************************************************************
+Training --- Epoch : 1 | Accuracy : 0.606 | Loss : 0.021703660225166992 | AUC : 0.495
+ 10%|█         | 2/20 [40:36<6:05:13, 1217.43s/it]Validation --- Epoch : 1 | Accuracy : 0.494 | Loss : 0.023304675459861757 | AUC : 0.509
+Saving..
+best auc: 0.509
+*****************************************************************************************
+Training --- Epoch : 2 | Accuracy : 0.608 | Loss : 0.02144652402751586 | AUC : 0.507
+ 15%|█▌        | 3/20 [1:00:44<5:43:40, 1212.95s/it]Validation --- Epoch : 2 | Accuracy : 0.498 | Loss : 0.023767286777496337 | AUC : 0.48
+*****************************************************************************************
+Training --- Epoch : 3 | Accuracy : 0.606 | Loss : 0.021484868757865008 | AUC : 0.5
+ 20%|██        | 4/20 [1:20:53<5:23:02, 1211.39s/it]Validation --- Epoch : 3 | Accuracy : 0.504 | Loss : 0.024516398668289186 | AUC : 0.516
+Saving..
+best auc: 0.516
+*****************************************************************************************
+Training --- Epoch : 4 | Accuracy : 0.609 | Loss : 0.02152371282787884 | AUC : 0.492
+ 25%|██▌       | 5/20 [1:41:00<5:02:28, 1209.93s/it]Validation --- Epoch : 4 | Accuracy : 0.504 | Loss : 0.02338938546180725 | AUC : 0.46
+*****************************************************************************************
+Training --- Epoch : 5 | Accuracy : 0.614 | Loss : 0.021558890041183023 | AUC : 0.507
+ 30%|███       | 6/20 [2:01:08<4:42:07, 1209.09s/it]Validation --- Epoch : 5 | Accuracy : 0.496 | Loss : 0.026726029992103578 | AUC : 0.511
+*****************************************************************************************
+Training --- Epoch : 6 | Accuracy : 0.606 | Loss : 0.021475345162784352 | AUC : 0.51
+ 35%|███▌      | 7/20 [2:21:17<4:21:59, 1209.16s/it]Validation --- Epoch : 6 | Accuracy : 0.484 | Loss : 0.025290613412857054 | AUC : 0.526
+Saving..
+best auc: 0.526
+*****************************************************************************************
+Training --- Epoch : 7 | Accuracy : 0.61 | Loss : 0.0215683773615781 | AUC : 0.494
+ 40%|████      | 8/20 [2:41:26<4:01:49, 1209.09s/it]Validation --- Epoch : 7 | Accuracy : 0.516 | Loss : 0.02268678593635559 | AUC : 0.569
+Saving..
+best auc: 0.569
+*****************************************************************************************
+Training --- Epoch : 8 | Accuracy : 0.609 | Loss : 0.02151221581066356 | AUC : 0.493
+ 45%|████▌     | 9/20 [3:01:34<3:41:34, 1208.60s/it]Validation --- Epoch : 8 | Accuracy : 0.488 | Loss : 0.02379224467277527 | AUC : 0.499
+*****************************************************************************************
+Training --- Epoch : 9 | Accuracy : 0.602 | Loss : 0.021647990489707274 | AUC : 0.497
+ 50%|█████     | 10/20 [3:21:41<3:21:22, 1208.24s/it]Validation --- Epoch : 9 | Accuracy : 0.5 | Loss : 0.030929012060165406 | AUC : 0.54
+*****************************************************************************************
+Training --- Epoch : 10 | Accuracy : 0.6 | Loss : 0.021747851834577673 | AUC : 0.498
+ 55%|█████▌    | 11/20 [3:41:49<3:01:12, 1208.05s/it]Validation --- Epoch : 10 | Accuracy : 0.498 | Loss : 0.02730572462081909 | AUC : 0.494
+*****************************************************************************************
+Training --- Epoch : 11 | Accuracy : 0.612 | Loss : 0.021534049665226655 | AUC : 0.482
+ 60%|██████    | 12/20 [4:01:56<2:41:02, 1207.82s/it]Validation --- Epoch : 11 | Accuracy : 0.502 | Loss : 0.028778427958488464 | AUC : 0.561
+*****************************************************************************************
+Training --- Epoch : 12 | Accuracy : 0.605 | Loss : 0.02147934897506938 | AUC : 0.496
+ 65%|██████▌   | 13/20 [4:22:04<2:20:54, 1207.82s/it]Validation --- Epoch : 12 | Accuracy : 0.484 | Loss : 0.02640485680103302 | AUC : 0.483
+*****************************************************************************************
+Training --- Epoch : 13 | Accuracy : 0.613 | Loss : 0.021452089863664963 | AUC : 0.499
+ 70%|███████   | 14/20 [4:42:12<2:00:47, 1207.87s/it]Validation --- Epoch : 13 | Accuracy : 0.534 | Loss : 0.022395047783851624 | AUC : 0.539
+*****************************************************************************************
+Training --- Epoch : 14 | Accuracy : 0.598 | Loss : 0.021616501601303326 | AUC : 0.5
+ 75%|███████▌  | 15/20 [5:02:19<1:40:38, 1207.79s/it]Validation --- Epoch : 14 | Accuracy : 0.486 | Loss : 0.02516459584236145 | AUC : 0.503
+*****************************************************************************************
+Training --- Epoch : 15 | Accuracy : 0.605 | Loss : 0.021626656896927776 | AUC : 0.497
+ 80%|████████  | 16/20 [5:22:28<1:20:31, 1207.90s/it]Validation --- Epoch : 15 | Accuracy : 0.498 | Loss : 0.025267008543014526 | AUC : 0.487
+*****************************************************************************************
+Training --- Epoch : 16 | Accuracy : 0.611 | Loss : 0.02165591634722317 | AUC : 0.5
+ 85%|████████▌ | 17/20 [5:42:36<1:00:24, 1208.18s/it]Validation --- Epoch : 16 | Accuracy : 0.508 | Loss : 0.023895163297653198 | AUC : 0.505
+*****************************************************************************************
+Training --- Epoch : 17 | Accuracy : 0.605 | Loss : 0.021594253497965194 | AUC : 0.499
+ 90%|█████████ | 18/20 [6:02:43<40:15, 1207.82s/it]  Validation --- Epoch : 17 | Accuracy : 0.502 | Loss : 0.02315840137004852 | AUC : 0.512
+*****************************************************************************************
+Training --- Epoch : 18 | Accuracy : 0.605 | Loss : 0.021536776462021998 | AUC : 0.497
+ 95%|█████████▌| 19/20 [6:22:51<20:07, 1207.84s/it]Validation --- Epoch : 18 | Accuracy : 0.5 | Loss : 0.026738974213600157 | AUC : 0.496
+*****************************************************************************************
+Training --- Epoch : 19 | Accuracy : 0.598 | Loss : 0.021804908769972185 | AUC : 0.494
+100%|██████████| 20/20 [6:42:59<00:00, 1207.93s/it]100%|██████████| 20/20 [6:42:59<00:00, 1208.99s/it]
+Validation --- Epoch : 19 | Accuracy : 0.498 | Loss : 0.024589921176433563 | AUC : 0.53
+*****************************************************************************************
+Testing --- Epoch : 19 | Accuracy : 0.615 | Loss : 0.021582570374011994 | AUC : 0.498
+{'loss': 0.021582570374011994, 'accuracy': 0.615, 'auc': 0.498, 'micro_f1': 0.615, 'prediction': array([False, False, False, ..., False, False, False]), 'labels': array([[1.],
+       [1.],
+       [1.],
+       ...,
+       [0.],
+       [0.],
+       [0.]], dtype=float32), 'proba': array([0.24119276, 0.3129861 , 0.44284427, ..., 0.41265923, 0.28543034,
+       0.2825618 ], dtype=float32)}
+Model Training Completed

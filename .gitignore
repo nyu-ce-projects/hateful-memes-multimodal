@@ -3,4 +3,4 @@ data/*
 .ipynb_checkpoints/*
 */.ipynb_checkpoints/*
 checkpoints/*
-logs/*
+logs/*.out
