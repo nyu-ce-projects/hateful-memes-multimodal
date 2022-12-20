@@ -9,7 +9,7 @@ import torch.backends.cudnn as cudnn
 import os
 
 import time
-
+from tqdm import tqdm
 
 
 class BaseTrainer():
@@ -76,8 +76,8 @@ class BaseTrainer():
     def train(self):
         try:
             print("Total Trainable Parameters : {}".format(self.totalTrainableParams))
-            model_version_name = int(time.time())
-            for epoch in range(self.epochs):
+            
+            for epoch in tqdm(range(self.epochs)):
                 self.train_epoch(epoch)
                 metrics = self.evaluate(epoch,'Validation', self.dev_loader)
                 self.scheduler.step()

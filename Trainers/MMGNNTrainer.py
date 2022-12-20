@@ -12,12 +12,11 @@ from Dataset.HatefulMemeDataset import HatefulMemeDataset
 from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
 import numpy as np
-from torch_geometric.data import HeteroData,Data as GraphData
+from torch_geometric.data import HeteroData,Data as GraphData,Batch
 from torch_geometric.loader import DataLoader as GDataLoader,DataListLoader
 from torch_geometric.nn import to_hetero,DataParallel
 import torch_geometric.transforms as T
 
-from tqdm import tqdm
 import numpy as np
 
 PROJECTION_DIM = 256
@@ -64,12 +63,12 @@ class MMGNNTrainer(BaseTrainer):
         self.models['text_projection'] = ProjectionHead(768,PROJECTION_DIM).to(self.device)
         self.models['graph'] = GCNClassifier(PROJECTION_DIM,1).to(self.device)
         self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True).to(self.device).eval()
-        if self.device in ['cuda','mps']:
+        if self.device in ['cuda','mps'] and self.n_gpus>1:
             for key, model in self.models.items():
                 if key!='graph':
                     self.models[key] = torch.nn.DataParallel(model)
-                else:
-                    self.models[key] = DataParallel(model)
+                # else:
+                #     self.models[key] = DataParallel(model)
                 # cudnn.benchmark = True
     def train_epoch(self,epoch):
         self.setTrain()
@@ -78,7 +77,7 @@ class MMGNNTrainer(BaseTrainer):
         preds = None
         proba = None
         out_label_ids = None
-        for images, tokenized_text, attention_masks, labels in tqdm(self.train_loader):
+        for images, tokenized_text, attention_masks, labels in self.train_loader:
             images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
             self.optimizer.zero_grad()
@@ -92,14 +91,15 @@ class MMGNNTrainer(BaseTrainer):
             # self.models['graph'] = to_hetero(self.models['graph'],g_data.metadata(),aggr='sum')
             # outputs = self.models['graph'](g_data.x_dict,g_data.edge_index_dict)
         
-            # g_data = next(iter(g_data_loader))
-            for g_data in g_data_loader:
-                outputs = self.models['graph'](g_data.x,g_data.edge_index,g_data.batch)
-                # print(outputs[0],g_data.y)
-                loss = self.criterion(outputs[0], g_data.y)
-                loss.backward()
+            g_data = next(iter(g_data_loader))
+            # for g_data in g_data_loader:
+            g_data = g_data.to(self.device)
+            outputs = self.models['graph'](g_data.x,g_data.edge_index,g_data.batch)
 
-                self.optimizer.step()
+            loss = self.criterion(outputs[0], g_data.y)
+            loss.backward()
+
+            self.optimizer.step()
             
             # Metrics Calculation
             if preds is None:
@@ -136,7 +136,7 @@ class MMGNNTrainer(BaseTrainer):
         proba = None
         out_label_ids = None
         with torch.no_grad():
-            for images, tokenized_text, attention_masks, labels in tqdm(data_loader):
+            for images, tokenized_text, attention_masks, labels in data_loader:
                 images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
                 text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
@@ -145,10 +145,12 @@ class MMGNNTrainer(BaseTrainer):
                 g_data_loader = self.generate_subgraph(image_embeddings,image_feat_embeddings,text_embeddings,labels)
                 
 
-                for g_data in g_data_loader:
-                    outputs = self.models['graph'](g_data.x,g_data.edge_index,g_data.batch)
-                    loss = self.criterion(outputs[0], g_data.y)
-                    test_loss += loss.item()
+                g_data = next(iter(g_data_loader))
+                # for g_data in g_data_loader:
+                g_data = g_data.to(self.device)
+                outputs = self.models['graph'](g_data.x,g_data.edge_index,g_data.batch)
+                loss = self.criterion(outputs[0], g_data.y)
+                test_loss += loss.item()
 
                 # Metrics Calculation
                 if preds is None:
@@ -224,7 +226,8 @@ class MMGNNTrainer(BaseTrainer):
             data = T.NormalizeFeatures()(data)
             data_list.append(data)
         
-        loader = DataListLoader(data_list, batch_size=self.batch_size)
+        loader = GDataLoader(data_list, batch_size=self.batch_size*self.n_gpus)
+        # return Batch.from_data_list(data_list)
         return loader
 
     def load_checkpoint(self):
