@@ -58,10 +58,7 @@ class BaseTrainer():
             self.optimizer = optim.SGD(self.trainableParameters, lr=self.lr,momentum=0.9, weight_decay=5e-4,nesterov=True)
         else:
             self.optimizer = eval("optim."+self.optim)(self.trainableParameters, lr=self.lr, weight_decay=5e-4)
-        print(self.optimizer) 
-        # num_warmup_steps = self.warmup_epochs * len(self.poison_train_loader)
-        # num_training_steps = (self.warmup_epochs+self.epochs) * len(self.poison_train_loader)
-        # self.scheduler = transformers.get_linear_schedule_with_warmup(self.optimizer,num_warmup_steps=num_warmup_steps,num_training_steps=num_training_steps)  # TODO: try get_polynomial_decay_schedule_with_warmup,cosine
+        print("Optimizer:",self.optimizer) 
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=200)
 
     def setTrain(self):
@@ -81,10 +78,12 @@ class BaseTrainer():
             model_version_name = int(time.time())
             for epoch in range(self.epochs):
                 self.train_epoch(epoch)
-                self.evaluate(epoch)
+                metrics = self.evaluate(epoch,self.dev_loader)
                 self.scheduler.step()
-                self.save_checkpoint(model_version_name,epoch)
+                self.save_checkpoint(model_version_name,metrics['AUC'])
                 print('*' * 89)
+            unseen_metrics = self.evaluate(epoch, self.test_loader)
+            print(unseen_metrics)
         except KeyboardInterrupt:
             print('-' * 89)
             print('Exiting from training early')
@@ -112,3 +111,15 @@ class BaseTrainer():
                 print("best accuracy:", acc)
         except Exception as e:
             print("Error:",e)
+
+    # def load_checkpoint(self):
+    #     # Load checkpoint.
+    #     print('==> Resuming from checkpoint..')
+    #     checkpoint_dir = os.path.join('./checkpoints',self.model_name, str(1671488899))
+    #     print(checkpoint_dir)
+    #     # assert os.path.isdir(checkpoint_dir), 'Error: no checkpoint directory found!'
+    #     checkpoint = torch.load('./checkpoint/{}/ckpt.pth'.format(self.device_name))
+    #     self.net.load_state_dict(checkpoint['net'],strict=False)
+    #     self.optimizer.load_state_dict(checkpoint['optmizer'],strict=False)
+    #     self.best_acc = checkpoint['acc']
+    #     self.epoch = checkpoint['epoch']

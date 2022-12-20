@@ -1,7 +1,7 @@
 
 import argparse
 
-from Trainers import MMGNNTrainer
+from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -12,10 +12,17 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', '-e',default=2, type=int,help='Epochs')
     parser.add_argument('--optim', '-o',default='SGD', type=str,help='optimizer type')
     parser.add_argument('--batchsize', '-bs',default=8, type=int,help='Batch Size')
+    parser.add_argument('--model', '-m',default='MMGCN', type=str)
+    
     args = parser.parse_args()
     
-    net = MMGNNTrainer(args)
-    print("============================================")
+    if args.model=='MMGCN':
+        net = MMGNNTrainer(args)
+    elif args.model=='MMGAT':
+        net = MMGATTrainer(args)
+    elif args.model=='MMSAGE':
+        net = MMSAGETrainer(args)
+    print(args.model,"============================================")
     net.train()
 
     

@@ -5,7 +5,8 @@ from torchvision import models
 from Trainers.BaseTrainer import BaseTrainer
 from Models import ImageEncoder,TextEncoder,ProjectionHead
 from Models.GCN import GCN,GCNClassifier
-from transformers import AutoTokenizer,DistilBertTokenizer
+from Models.GAT import GAT
+from transformers import AutoTokenizer
 from Dataset.HatefulMemeDataset import HatefulMemeDataset
 
 from torch.utils.data import DataLoader
@@ -15,14 +16,13 @@ import numpy as np
 from torch_geometric.data import HeteroData,Data as GraphData
 from torch_geometric.loader import DataLoader as GDataLoader
 from torch_geometric.nn import to_hetero
-import torch_geometric.transforms as T
 
 from tqdm import tqdm
 import numpy as np
 
 PROJECTION_DIM = 256
 
-class MMGNNTrainer(BaseTrainer):
+class MMGATTrainer(BaseTrainer):
     def __init__(self, args) -> None:
         super().__init__(args)
 
@@ -30,8 +30,6 @@ class MMGNNTrainer(BaseTrainer):
         self.build_model()
         self.getTrainableParams()
         self.setup_optimizer_losses()
-        # if args.resume:
-        #     self.load_checkpoint()
 
     def load_dataset(self):
         # Data
@@ -42,9 +40,8 @@ class MMGNNTrainer(BaseTrainer):
                 torchvision.transforms.ToTensor()
             ]
         )
-        # model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
-        # tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
-        tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+        model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
+        tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
         train_dataset = HatefulMemeDataset('./data','train',image_transform,tokenizer)
         self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=train_dataset.collate_fn)
 
@@ -62,7 +59,7 @@ class MMGNNTrainer(BaseTrainer):
         self.models['text_encoder'] = TextEncoder().to(self.device)
         self.models['image_projection'] = ProjectionHead(2048,PROJECTION_DIM).to(self.device)
         self.models['text_projection'] = ProjectionHead(768,PROJECTION_DIM).to(self.device)
-        self.models['graph'] = GCNClassifier(PROJECTION_DIM,1).to(self.device)
+        self.models['graph'] = GAT(PROJECTION_DIM,num_classes=1).to(self.device)
         self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True).to(self.device).eval()
         if self.device in ['cuda','mps']:
             for key, model in self.models.items():
@@ -78,7 +75,7 @@ class MMGNNTrainer(BaseTrainer):
         out_label_ids = None
         for images, tokenized_text, attention_masks, labels in self.train_loader:
             images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
-            
+            print("Akash")
             self.optimizer.zero_grad()
             
             text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
@@ -90,14 +87,15 @@ class MMGNNTrainer(BaseTrainer):
             # self.models['graph'] = to_hetero(self.models['graph'],g_data.metadata(),aggr='sum')
             # outputs = self.models['graph'](g_data.x_dict,g_data.edge_index_dict)
         
-            # g_data = next(iter(g_data_loader))
-            for g_data in g_data_loader:
-                outputs = self.models['graph'](g_data.x,g_data.edge_index,g_data.batch)
-                # print(outputs[0],g_data.y)
-                loss = self.criterion(outputs[0], g_data.y)
-                loss.backward()
+            g_data = next(iter(g_data_loader))
+            print(g_data)
+            outputs = self.models['graph'](g_data.x,g_data.edge_index,g_data.batch)
+            print(outputs[0],g_data.y)
+            loss = self.criterion(outputs[0], g_data.y)
+            loss.backward()
 
-                self.optimizer.step()
+            self.optimizer.step()
+            
             
             # Metrics Calculation
             if preds is None:
@@ -129,7 +127,7 @@ class MMGNNTrainer(BaseTrainer):
         print("Training --- Epoch : {} | Accuracy : {} | Loss : {} | AUC : {}".format(epoch,result['accuracy'],result['loss'],result['AUC']))    
         return result
 
-    def evaluate(self, epoch, data_loader):
+    def evaluate(self, epoch):
         self.setEval()
         test_loss = 0
         total = 0
@@ -137,7 +135,7 @@ class MMGNNTrainer(BaseTrainer):
         proba = None
         out_label_ids = None
         with torch.no_grad():
-            for images, tokenized_text, attention_masks, labels in data_loader:
+            for images, tokenized_text, attention_masks, labels in self.dev_loader:
                 images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
                 text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
@@ -146,9 +144,8 @@ class MMGNNTrainer(BaseTrainer):
                 g_data_loader = self.generate_subgraph(image_embeddings,image_feat_embeddings,text_embeddings,labels)
                 
                 g_data = next(iter(g_data_loader))
-                
                 outputs = self.models['graph'](g_data.x,g_data.edge_index,g_data.batch)
-                # print(outputs[0],g_data.y)
+                print(outputs[0],g_data.y)
                 loss = self.criterion(outputs[0], g_data.y)
 
                 # Metrics Calculation
@@ -225,8 +222,6 @@ class MMGNNTrainer(BaseTrainer):
 
             data.edge_index = torch.cat([imgEdges,textEdges],dim=1)
             data.y = labels[i]
-            data = T.ToUndirected()(data)
-            data = T.NormalizeFeatures()(data)
             data_list.append(data)
         # print(len(data_list))
         loader = GDataLoader(data_list, batch_size=self.batch_size)

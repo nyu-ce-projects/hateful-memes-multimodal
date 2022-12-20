@@ -5,8 +5,8 @@
 #SBATCH --gres=gpu:a100:1
 #SBATCH --time=24:10:00
 #SBATCH --mem=32GB
-#SBATCH --job-name=mmgnn
-#SBATCH --output=./logs/mmgnn_%j.out
+#SBATCH --job-name=mmgcn
+#SBATCH --output=./logs/mmgcn_a100_%j.out
 
 module purge
 module load anaconda3/2020.07
@@ -15,4 +15,4 @@ conda activate hpml-env
 
 cd /scratch/am11533/multimodal-gnn-attn
 
-python main.py --batchsize 16 --epochs 20 --optim Adam
+python main.py --batchsize 32 --epochs 5 --optim Adam --model MMGCN
