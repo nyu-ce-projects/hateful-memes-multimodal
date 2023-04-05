@@ -16,10 +16,9 @@ There has been a sharp increase in the number of people using social media recen
 - torchcontrib
 - pytorch lightning
 
-
-### Traing the Unimodal and Multimodal Networks
-Notebook has been provided for these networks in the `notebook/` directory.
-
+### Dataset
+Hateful Meme Challenge 
+Conceptual Caption Dataset -> https://www.kaggle.com/datasets/danielkaplan/conceptual-captions-8m12m | https://ai.google.com/research/ConceptualCaptions/download 
 
 
 ### Training the Multimodal Graph Network

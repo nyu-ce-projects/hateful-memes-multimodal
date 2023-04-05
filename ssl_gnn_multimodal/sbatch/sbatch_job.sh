@@ -11,7 +11,7 @@
 module purge
 module load anaconda3/2020.07
 eval "$(conda shell.bash hook)"
-conda activate hpml-env
+conda activate ssl-gnn
 
 cd /scratch/am11533/multimodal-gnn-attn
 
