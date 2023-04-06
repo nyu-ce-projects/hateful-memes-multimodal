@@ -22,36 +22,10 @@ class GCNEncoder(nn.Module):
 
 
 class DeepVGAE(VGAE):
-    def __init__(self, args):
-        super(DeepVGAE, self).__init__(encoder,decoder=InnerProductDecoder())
+    def __init__(self, encoder,decoder=InnerProductDecoder()):
+        super(DeepVGAE, self).__init__(encoder,decoder)
 
     def forward(self, x, edge_index):
         z = self.encode(x, edge_index)
         adj_pred = self.decoder.forward_all(z)
         return adj_pred
-
-    # def loss(self, x, pos_edge_index, all_edge_index):
-        # z = self.encode(x, pos_edge_index)
-
-        # pos_loss = -torch.log(
-        #     self.decoder(z, pos_edge_index, sigmoid=True) + 1e-15).mean()
-
-        # # Do not include self-loops in negative samples
-        # all_edge_index_tmp, _ = remove_self_loops(all_edge_index)
-        # all_edge_index_tmp, _ = add_self_loops(all_edge_index_tmp)
-
-        # neg_edge_index = negative_sampling(all_edge_index_tmp, z.size(0), pos_edge_index.size(1))
-        # neg_loss = -torch.log(1 - self.decoder(z, neg_edge_index, sigmoid=True) + 1e-15).mean()
-
-        # kl_loss = 1 / x.size(0) * self.kl_loss()
-
-        # return pos_loss + neg_loss + kl_loss
-        
-
-
-
-    # def single_test(self, x, train_pos_edge_index, test_pos_edge_index, test_neg_edge_index):
-    #     with torch.no_grad():
-    #         z = self.encode(x, train_pos_edge_index)
-    #     roc_auc_score, average_precision_score = self.test(z, test_pos_edge_index, test_neg_edge_index)
-    #     return roc_auc_score, average_precision_score

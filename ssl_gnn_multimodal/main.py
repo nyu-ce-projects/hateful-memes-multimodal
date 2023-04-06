@@ -1,7 +1,7 @@
 
 import argparse
 
-from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer
+from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer,VGAETrainer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -22,6 +22,8 @@ if __name__ == "__main__":
         net = MMGATTrainer(args)
     elif args.model=='MMSAGE':
         net = MMSAGETrainer(args)
+    elif args.model=="VGAE":
+        net = VGAETrainer(args)
     print(args.model,"============================================")
     net.train()
 
