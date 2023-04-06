@@ -44,13 +44,13 @@ class MMGNNTrainer(BaseTrainer):
         # model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
         # tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
         tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
-        train_dataset = HatefulMemeDataset('./data','train',image_transform,tokenizer)
+        train_dataset = HatefulMemeDataset(self.data_path,'train',image_transform,tokenizer)
         self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=train_dataset.collate_fn)
 
-        dev_dataset = HatefulMemeDataset('./data','dev',image_transform,tokenizer)
+        dev_dataset = HatefulMemeDataset(self.data_path,'dev',image_transform,tokenizer)
         self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=dev_dataset.collate_fn)
 
-        test_dataset = HatefulMemeDataset('./data','test',image_transform,tokenizer)
+        test_dataset = HatefulMemeDataset(self.data_path,'test',image_transform,tokenizer)
         self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=test_dataset.collate_fn)
 
     def build_model(self):

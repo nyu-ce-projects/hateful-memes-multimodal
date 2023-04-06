@@ -4,7 +4,7 @@ from Trainers import MMGNNTrainer
 import torch
 from torch_geometric.utils import negative_sampling
 from sklearn.metrics import average_precision_score, roc_auc_score
-
+import numpy as np
 
 PROJECTION_DIM = 256
 
@@ -53,8 +53,8 @@ class VGAETrainer(MMGNNTrainer):
     
     def evaluate(self, epoch, data_type, data_loader):
         self.setEval()
-        yT = []
-        preds = []
+        roc_auc_scores = []
+        ap_scores = []
         with torch.no_grad():
             for images, tokenized_text, attention_masks, labels in data_loader:
                 images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
@@ -81,14 +81,16 @@ class VGAETrainer(MMGNNTrainer):
                 pred = torch.cat([pos_pred, neg_pred], dim=0)
 
                 y, pred = y.detach().cpu().numpy(), pred.detach().cpu().numpy()
-                yT.append(y)
-                preds.append(pred)
+                
+                roc_auc,ap_score =  roc_auc_score(y, pred), average_precision_score(y, pred)
+                roc_auc_scores.append(roc_auc)
+                ap_scores.append(ap_score)
 
-        roc_auc,ap_score =  roc_auc_score(yT, preds), average_precision_score(yT, preds)
-        print("{} --- Epoch : {} | roc_auc_score : {} | average_precision_score : {}".format(data_type,epoch,roc_auc,ap_score))    
+
+        print("{} --- Epoch : {} | roc_auc_score : {} | average_precision_score : {}".format(data_type,epoch,np.mean(roc_auc_scores),np.mean(ap_scores)))    
         return {
-            "auc":roc_auc,
-            "avg_precision":ap_score
+            "auc":np.mean(roc_auc_scores),
+            "avg_precision":np.mean(ap_scores)
         }
 
     def save_checkpoint(self,epoch, metrics):

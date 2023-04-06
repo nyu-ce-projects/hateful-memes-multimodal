@@ -4,3 +4,4 @@ data/*
 checkpoints/*
 logs/*.out
 *.pyc
+slurm-*.out

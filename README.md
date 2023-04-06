@@ -24,7 +24,7 @@ Conceptual Caption Dataset -> https://www.kaggle.com/datasets/danielkaplan/conce
 ### Training the Multimodal Graph Network
 ```
 python main.py --batchsize 16 --epochs 1 --optim Adam --model MMSAGE --workers 4 --lr 0.01
-python ssl_gnn_multimodal/main.py --batchsize 16 --epochs 1 --optim Adam --model VGAE --workers 4 --lr 0.01
+python ssl_gnn_multimodal/main.py --batchsize 16 --epochs 1 --optim Adam --model VGAE --workers 4 --lr 0.01 --data_path ../datasets/hateful-dataset/data/
 ```
 
 Graph Models Available:

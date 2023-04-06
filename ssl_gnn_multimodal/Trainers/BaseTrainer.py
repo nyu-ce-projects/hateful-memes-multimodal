@@ -22,6 +22,7 @@ class BaseTrainer():
         self.num_workers = args.workers
         self.epochs = self.args.epochs
         self.batch_size = self.args.batchsize
+        self.data_path = self.args.data_path
         self.n_gpus = 1
         self.best_acc = 0
         self.best_auc = 0
