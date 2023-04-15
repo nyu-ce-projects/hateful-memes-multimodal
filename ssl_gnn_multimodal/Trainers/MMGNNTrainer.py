@@ -56,12 +56,13 @@ class MMGNNTrainer(BaseTrainer):
     def build_model(self):
         # Model
         print('==> Building model..')
-        self.models = {}
-        self.models['image_encoder'] = ImageEncoder().to(self.device)
-        self.models['text_encoder'] = TextEncoder().to(self.device)
-        self.models['image_projection'] = ProjectionHead(2048,PROJECTION_DIM).to(self.device)
-        self.models['text_projection'] = ProjectionHead(768,PROJECTION_DIM).to(self.device)
-        self.models['graph'] = GCNClassifier(PROJECTION_DIM,1).to(self.device)
+        self.models = {
+            'image_encoder': ImageEncoder().to(self.device),
+            'text_encoder': TextEncoder().to(self.device),
+            'image_projection': ProjectionHead(2048,PROJECTION_DIM).to(self.device),
+            'text_projection': ProjectionHead(768,PROJECTION_DIM).to(self.device),
+            'graph': GCNClassifier(PROJECTION_DIM,1).to(self.device)
+        }
         self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True).to(self.device).eval()
         if self.device in ['cuda','mps'] and self.n_gpus>1:
             for key, model in self.models.items():
@@ -81,7 +82,7 @@ class MMGNNTrainer(BaseTrainer):
             images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
             self.optimizer.zero_grad()
-            
+            # images, image_features, text_features,labels
             text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
             image_feat_embeddings = self.get_image_feature_embeddings(images)
             image_embeddings = self.models['image_projection'](self.models['image_encoder'](images))

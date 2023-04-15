@@ -1,7 +1,7 @@
 
 import argparse
 
-from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer,VGAETrainer
+from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer,VGAETrainer,ClassifierTrainer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -13,6 +13,7 @@ if __name__ == "__main__":
     parser.add_argument('--optim', '-o',default='SGD', type=str,help='optimizer type')
     parser.add_argument('--batchsize', '-bs',default=8, type=int,help='Batch Size')
     parser.add_argument('--model', '-m',default='MMGCN', type=str)
+    # parser.add_argument('--task', '-t',default='train_e_e', type=str,help='')
     parser.add_argument('--data_path', '-d',default='./data', type=str)
     
     args = parser.parse_args()
@@ -23,8 +24,10 @@ if __name__ == "__main__":
         net = MMGATTrainer(args)
     elif args.model=='MMSAGE':
         net = MMSAGETrainer(args)
-    elif args.model=="VGAE":
+    elif args.model=="VGAE_UNSUPERVISED":
         net = VGAETrainer(args)
+    elif args.model=="MLP_EMBED_CLASSIFIER":
+        net = ClassifierTrainer(args)
     print(args.model,"============================================")
     net.train()
 
