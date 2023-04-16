@@ -46,7 +46,7 @@ class ClassifierTrainer(MMGNNTrainer):
             z = self.models['graph'].encode(g_data.x, g_data.edge_index)
             
             output = self.models['classifier'](z,g_data)
-            print(output.size())
+            
             loss = self.criterion(output, g_data.y)
             loss.backward()
 
