@@ -1087,13 +1087,13 @@ opt-einsum = ["opt-einsum (>=3.3)"]
 
 [[package]]
 name = "torch-geometric"
-version = "2.2.0"
+version = "2.3.0"
 description = "Graph Neural Network Library for PyTorch"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "torch_geometric-2.2.0.tar.gz", hash = "sha256:fdb282451fc33270e8e0b81d9aec7b70590363227dab0b1a7cb50a91d7b98e1d"},
+    {file = "torch_geometric-2.3.0.tar.gz", hash = "sha256:4b44965d1d1f12ec2656d896614c9e8de11c096c5ff0dc7661b54b498fa3f766"},
 ]
 
 [package.dependencies]
@@ -1107,10 +1107,11 @@ scipy = "*"
 tqdm = "*"
 
 [package.extras]
-benchmark = ["protobuf (<4.21)", "wandb"]
+benchmark = ["matplotlib", "networkx", "pandas", "protobuf (<4.21)", "wandb"]
 dev = ["onnx", "onnxruntime", "pre-commit", "pytest", "pytest-cov"]
-full = ["ase", "captum", "h5py", "hydra-core", "matplotlib", "networkx", "numba", "pandas", "protobuf (<4.21)", "pytorch-lightning", "pytorch-memlab", "rdflib", "scikit-image", "sympy", "tabulate", "torchmetrics (>=0.7)", "trimesh", "yacs"]
+full = ["ase", "captum", "graphviz", "h5py", "huggingface_hub", "hydra-core", "matplotlib", "networkx", "numba", "opt_einsum", "pandas", "pgmpy", "protobuf (<4.21)", "pytorch-lightning", "pytorch-memlab", "rdflib", "scikit-image", "statsmodels", "sympy", "tabulate", "torchmetrics", "trimesh", "yacs"]
 graphgym = ["hydra-core", "protobuf (<4.21)", "pytorch-lightning", "yacs"]
+modelhub = ["huggingface_hub"]
 test = ["onnx", "onnxruntime", "pytest", "pytest-cov"]
 
 [[package]]

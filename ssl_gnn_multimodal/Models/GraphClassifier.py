@@ -2,7 +2,7 @@ import torch
 from torch.nn import Sequential,Linear,ReLU,BatchNorm1d
 import torch.nn.functional as F
 from torch_geometric.nn import global_mean_pool
-
+from torch_geometric.nn import MLP, MLPAggregation
 
 class GraphClassifier(torch.nn.Module):
     def __init__(self, in_channels, out_channels, num_layers, batch_norm=True,
@@ -45,3 +45,21 @@ class GraphClassifier(torch.nn.Module):
         return '{}({}, {}, num_layers={}, batch_norm={}, dropout={})'.format(
             self.__class__.__name__, self.in_channels, self.out_channels,
             self.num_layers, self.batch_norm, self.dropout)
+
+
+class AdaptiveReadoutMLPClassifier(torch.nn.Module):
+    def __init__(self, in_channels,hidden_channels,out_channels,max_num_elements,num_layers) -> None:
+        super().__init__()
+
+        self.mlp_aggregation = MLPAggregation(in_channels,out_channels,max_num_elements,num_layers=num_layers,hidden_channels=hidden_channels)
+
+
+    def forward(self,x,g_data):
+        batch = g_data.batch
+        x = self.mlp_aggregation(x,batch)
+        x = x.view(-1)
+        return x
+
+
+
+    

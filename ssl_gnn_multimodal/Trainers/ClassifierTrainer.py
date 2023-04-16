@@ -2,7 +2,7 @@ import os
 import torch
 from Trainers.MMGNNTrainer import MMGNNTrainer
 from Models.DeepVGAE import DeepVGAE,GCNEncoder
-from Models.GraphClassifier import GraphClassifier
+from Models.GraphClassifier import GraphClassifier,AdaptiveReadoutMLPClassifier
 import numpy as np
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
 
@@ -12,21 +12,18 @@ class ClassifierTrainer(MMGNNTrainer):
     def __init__(self,args) -> None:
         super().__init__(args)
 
-        self.load_dataset()
         self.build_model()
         self.getTrainableParams()
-        self.setup_optimizer_losses()
         if args.resume:
             self.load_checkpoint()
 
-    def load_dataset(self):
-        return super().load_dataset()
     
     def build_model(self):
         super().build_model()
         gcn_encoder = GCNEncoder(PROJECTION_DIM,64,16)
         self.models['graph'] = DeepVGAE(gcn_encoder).to(self.device)
-        self.models['classifier'] = GraphClassifier(16,1, 2, True,0.5)
+        # self.models['classifier'] = GraphClassifier(16,1, 2, True,0.5).to(self.device)
+        self.models['classifier'] = AdaptiveReadoutMLPClassifier(16,8,1,1,num_layers=2).to(self.device)
     
     def train_epoch(self, epoch):
         self.setTrain()
@@ -49,7 +46,7 @@ class ClassifierTrainer(MMGNNTrainer):
             z = self.models['graph'].encode(g_data.x, g_data.edge_index)
             
             output = self.models['classifier'](z,g_data)
-
+            print(output.size())
             loss = self.criterion(output, g_data.y)
             loss.backward()
 
@@ -102,7 +99,7 @@ class ClassifierTrainer(MMGNNTrainer):
                 g_data = next(iter(g_data_loader))
                 g_data = g_data.to(self.device)
                 z = self.models['graph'].encode(g_data.x, g_data.edge_index)
-                output = self.models['classifier'](z)
+                output = self.models['classifier'](z,g_data)
                 loss = self.criterion(output, g_data.y)
                 test_loss += loss.item()
 
