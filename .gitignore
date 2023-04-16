@@ -5,3 +5,5 @@ checkpoints/*
 logs/*.out
 *.pyc
 slurm-*.out
+*.zip
+ssl_gnn_multimodal/Dataset/hateful_memes/*

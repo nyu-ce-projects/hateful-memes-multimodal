@@ -1,12 +1,13 @@
 import torch
 from torch.nn import Sequential,Linear,ReLU,BatchNorm1d
 import torch.nn.functional as F
+from torch_geometric.nn import global_mean_pool
 
 
-class MLP(torch.nn.Module):
+class GraphClassifier(torch.nn.Module):
     def __init__(self, in_channels, out_channels, num_layers, batch_norm=True,
                  dropout=0.5):
-        super(MLP, self).__init__()
+        super(GraphClassifier, self).__init__()
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -28,7 +29,8 @@ class MLP(torch.nn.Module):
             lin.reset_parameters()
             batch_norm.reset_parameters()
 
-    def forward(self, x, *args):
+    def forward(self, x, g_data):
+        x = global_mean_pool(x,g_data.batch)
         for i, (lin, bn) in enumerate(zip(self.lins, self.batch_norms)):
             if i == self.num_layers - 1:
                 x = F.dropout(x, p=self.dropout, training=self.training)
@@ -36,6 +38,7 @@ class MLP(torch.nn.Module):
             if i < self.num_layers - 1:
                 x = F.relu(x)
                 x = bn(x) if self.batch_norm else x
+        x = x.view(-1)
         return x
 
     def __repr__(self):

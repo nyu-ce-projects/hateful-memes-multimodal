@@ -228,7 +228,7 @@ class MMGNNTrainer(BaseTrainer):
             data_list.append(data)
         
         loader = GDataLoader(data_list, batch_size=self.batch_size*self.n_gpus)
-        # return Batch.from_data_list(data_list)
+        # return Batch().from_data_list(data_list)
         return loader
 
     def load_checkpoint(self):

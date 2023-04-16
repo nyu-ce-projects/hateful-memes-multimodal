@@ -53,6 +53,7 @@ class BaseTrainer():
         raise NotImplementedError
         
     def setup_optimizer_losses(self):
+        # self.criterion = nn.CrossEntropyLoss()
         self.criterion = nn.BCEWithLogitsLoss()  #BCEWithLogitsLoss() #nn.CrossEntropyLoss()
         if self.optim=='SGD':
             self.optimizer = optim.SGD(self.trainableParameters, lr=self.lr,momentum=0.9, weight_decay=5e-4)

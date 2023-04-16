@@ -2,7 +2,7 @@ import os
 import torch
 from Trainers.MMGNNTrainer import MMGNNTrainer
 from Models.DeepVGAE import DeepVGAE,GCNEncoder
-from Models.MLP import MLP
+from Models.GraphClassifier import GraphClassifier
 import numpy as np
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
 
@@ -26,7 +26,7 @@ class ClassifierTrainer(MMGNNTrainer):
         super().build_model()
         gcn_encoder = GCNEncoder(PROJECTION_DIM,64,16)
         self.models['graph'] = DeepVGAE(gcn_encoder).to(self.device)
-        self.models['classifier'] = MLP(PROJECTION_DIM,1, 2, True,0.5)
+        self.models['classifier'] = GraphClassifier(16,1, 2, True,0.5)
     
     def train_epoch(self, epoch):
         self.setTrain()
@@ -44,9 +44,11 @@ class ClassifierTrainer(MMGNNTrainer):
             image_embeddings = self.models['image_projection'](self.models['image_encoder'](images))
             g_data_loader = self.generate_subgraph(image_embeddings,image_feat_embeddings,text_embeddings,labels)
             g_data = next(iter(g_data_loader))
+            
             g_data = g_data.to(self.device)
             z = self.models['graph'].encode(g_data.x, g_data.edge_index)
-            output = self.models['classifier'](z)
+            
+            output = self.models['classifier'](z,g_data)
 
             loss = self.criterion(output, g_data.y)
             loss.backward()
