@@ -41,9 +41,9 @@ class MMGNNTrainer(BaseTrainer):
                 torchvision.transforms.ToTensor()
             ]
         )
-        # model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
-        # tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
-        tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+        model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
+        tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
+        # tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
         train_dataset = HatefulMemeDataset(self.data_path,'train',image_transform,tokenizer)
         self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=train_dataset.collate_fn)
 

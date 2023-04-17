@@ -2,9 +2,10 @@ import os
 import torch
 from Trainers.MMGNNTrainer import MMGNNTrainer
 from Models.DeepVGAE import DeepVGAE,GCNEncoder
-from Models.GraphClassifier import GraphClassifier,AdaptiveReadoutMLPClassifier
+from Models.GraphClassifier import GraphClassifier
 import numpy as np
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
+from torch_geometric.nn import MLP, MLPAggregation,SetTransformerAggregation,DeepSetsAggregation,GRUAggregation
 
 PROJECTION_DIM = 256
 
@@ -22,8 +23,9 @@ class ClassifierTrainer(MMGNNTrainer):
         super().build_model()
         gcn_encoder = GCNEncoder(PROJECTION_DIM,64,16)
         self.models['graph'] = DeepVGAE(gcn_encoder).to(self.device)
-        # self.models['classifier'] = GraphClassifier(16,1, 2, True,0.5).to(self.device)
-        self.models['classifier'] = AdaptiveReadoutMLPClassifier(16,8,1,1,num_layers=2).to(self.device)
+        max_num_nodes_in_graph = 12
+        self.models['readout_aggregation'] = MLPAggregation(16,16,max_num_nodes_in_graph,num_layers=1)
+        self.models['classifier'] = GraphClassifier(16,1, 2,self.models['readout_aggregation'], True,0.5).to(self.device)
     
     def train_epoch(self, epoch):
         self.setTrain()
