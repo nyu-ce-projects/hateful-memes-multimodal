@@ -1,5 +1,5 @@
 import os
-from Models.DeepVGAE import DeepVGAE,GCNEncoder
+from Models.DeepVGAE import DeepVGAE,GCNEncoder,GATEncoder
 from Trainers import MMGNNTrainer
 import torch
 from torch_geometric.utils import negative_sampling
