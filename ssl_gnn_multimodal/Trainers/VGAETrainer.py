@@ -18,7 +18,7 @@ class VGAETrainer(MMGNNTrainer):
 
     def build_model(self):
         super().build_model()
-        gnn_encoder = GATEncoder(PROJECTION_DIM,64,16,5,0.3)
+        gnn_encoder = GATEncoder(PROJECTION_DIM,64,16,8,0.3)
         self.models['graph'] = DeepVGAE(gnn_encoder).to(self.device)
 
     def train_epoch(self,epoch):

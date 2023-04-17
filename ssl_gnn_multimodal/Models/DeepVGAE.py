@@ -24,8 +24,8 @@ class GATEncoder(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels,nheads,dropout):
         super(GATEncoder, self).__init__()
         self.gcn_shared = GATv2Conv(in_channels, hidden_channels,nheads,dropout=dropout)
-        self.gcn_mu = GATv2Conv(hidden_channels, out_channels,nheads,dropout=dropout)
-        self.gcn_logvar = GATv2Conv(hidden_channels, out_channels,nheads,dropout=dropout)
+        self.gcn_mu = GATv2Conv(hidden_channels*nheads, out_channels,1,dropout=dropout)
+        self.gcn_logvar = GATv2Conv(hidden_channels*nheads, out_channels,1,dropout=dropout)
 
     def forward(self, x, edge_index):
         x = F.relu(self.gcn_shared(x, edge_index))
