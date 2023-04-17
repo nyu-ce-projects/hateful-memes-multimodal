@@ -32,7 +32,7 @@ class ConceptualCaptionDataset(torch.utils.data.Dataset):
 
         # Tokenized Text Tensor 
         encoded_queries = self.tokenizer([row[1] for row in batch])
-        print(encoded_queries)
+        # print(encoded_queries)
         lens = [len(row) for row in encoded_queries['input_ids']]
         text_tensor = torch.zeros(len(batch),max(lens),dtype=torch.long)
         attention_mask = torch.zeros(len(batch),max(lens),dtype=torch.long)
