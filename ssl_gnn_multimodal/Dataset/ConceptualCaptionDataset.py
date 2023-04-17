@@ -8,7 +8,7 @@ from pathlib import Path
 class ConceptualCaptionDataset(torch.utils.data.Dataset):
     def __init__(self,data_path,image_transform,tokenizer) -> None:
         super().__init__()
-        self.data = glob(os.path.join(data_path,"*/*.jpg"), recursive = True)
+        self.data = [img_path for img_path in glob(os.path.join(data_path,"*/*.jpg"), recursive = True) if os.path.exists(img_path.replace("jpg","txt"))]
         self.data_dir = data_path
         self.image_transform = image_transform
         self.tokenizer = tokenizer     
