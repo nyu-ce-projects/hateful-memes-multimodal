@@ -22,7 +22,7 @@ class ConceptualCaptionDataset(torch.utils.data.Dataset):
         text_file_path = self.data[index].replace("jpg","txt")
         text = Path(text_file_path).read_text().replace('\n','')
         
-        return image, text
+        return image, text, -1
     
     def collate_fn(self,batch):
         # Image Tensor
@@ -42,5 +42,7 @@ class ConceptualCaptionDataset(torch.utils.data.Dataset):
             text_tensor[i_batch, :length] = torch.tensor(encoded_queries['input_ids'][i_batch])
             attention_mask[i_batch, :length] = torch.tensor(encoded_queries['attention_mask'][i_batch])
         
+        #Label Tensor
+        label_tensor = torch.stack([torch.tensor([row[2]],dtype=torch.float32) for row in batch])
 
-        return tensor_img,text_tensor,attention_mask
+        return tensor_img,text_tensor,attention_mask,label_tensor
