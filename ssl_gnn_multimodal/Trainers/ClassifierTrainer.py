@@ -4,7 +4,7 @@ from Trainers.MMGNNTrainer import MMGNNTrainer
 from Models.DeepVGAE import DeepVGAE,GCNEncoder,GATEncoder
 from Models.GraphClassifier import GraphClassifier
 import numpy as np
-from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
+from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, average_precision_score
 from torch_geometric.nn import MLP, MLPAggregation,SetTransformerAggregation,DeepSetsAggregation,GRUAggregation
 
 PROJECTION_DIM = 256
@@ -22,14 +22,14 @@ class ClassifierTrainer(MMGNNTrainer):
     def build_model(self):
         super().build_model()
         # gnn_encoder = GCNEncoder(PROJECTION_DIM,64,16)
-        gnn_encoder = GATEncoder(PROJECTION_DIM,64,16,5,0.3)
-        self.models['graph'] = DeepVGAE(gnn_encoder).to(self.device)
+        self.models['gnn_encoder'] = GATEncoder(PROJECTION_DIM,64,16,8,0.3)
+        self.models['graph'] = DeepVGAE(self.models['gnn_encoder']).to(self.device)
         max_num_nodes_in_graph = 12
         self.models['readout_aggregation'] = MLPAggregation(16,16,max_num_nodes_in_graph,num_layers=1)
         self.models['classifier'] = GraphClassifier(16,1, 2,self.models['readout_aggregation'], True,0.5).to(self.device)
     
     def train_epoch(self, epoch):
-        self.setTrain()
+        self.setTrain(model_keys=['readout_aggregation','classifier']) #CHECK
         train_loss = 0
         total = 0
         preds = None
@@ -77,6 +77,7 @@ class ClassifierTrainer(MMGNNTrainer):
             "loss": train_loss/total,
             "accuracy": round(accuracy_score(out_label_ids, preds),3),
             "auc": round(roc_auc_score(out_label_ids, proba),3),
+            "avg_precision": round(average_precision_score(out_label_ids,preds),3),
             "micro_f1": round(f1_score(out_label_ids, preds, average="micro"),3)
         }
         print("Training --- Epoch : {} | Accuracy : {} | Loss : {} | AUC : {}".format(epoch,metrics['accuracy'],metrics['loss'],metrics['auc']))    
@@ -128,6 +129,7 @@ class ClassifierTrainer(MMGNNTrainer):
             "accuracy": round(accuracy_score(out_label_ids, preds),3),
             "auc": round(roc_auc_score(out_label_ids, proba),3),
             "micro_f1": round(f1_score(out_label_ids, preds, average="micro"),3),
+            "avg_precision": round(average_precision_score(out_label_ids,preds),3),
             "prediction": preds,
             "labels": out_label_ids,
             "proba": proba

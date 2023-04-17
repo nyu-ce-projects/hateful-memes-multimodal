@@ -21,36 +21,36 @@ class VGAETrainer(MMGNNTrainer):
         self.getTrainableParams()
         self.setup_optimizer_losses()
 
-    def load_dataset(self):
-        # Data
-        print('==> Preparing data..')
-        image_transform = torchvision.transforms.Compose(
-            [
-                torchvision.transforms.Resize(size=(224, 224)),
-                torchvision.transforms.ToTensor()
-            ]
-        )
-        model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
-        tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
+    # def load_dataset(self):
+    #     # Data
+    #     print('==> Preparing data..')
+    #     image_transform = torchvision.transforms.Compose(
+    #         [
+    #             torchvision.transforms.Resize(size=(224, 224)),
+    #             torchvision.transforms.ToTensor()
+    #         ]
+    #     )
+    #     model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
+    #     tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
 
-        dataset = ConceptualCaptionDataset("../datasets/cc12m/",image_transform,tokenizer)
-        n_dataset = len(dataset)
-        n_dev = math.ceil(len(dataset)*0.05)
-        n_test = math.ceil(len(dataset)*0.05)
-        n_train = n_dataset - n_test - n_dev
-        train_dataset, dev_dataset, test_dataset = torch.utils.data.random_split(dataset, (n_train, n_dev, n_test))
+    #     dataset = ConceptualCaptionDataset(self.data_path,image_transform,tokenizer)
+    #     n_dataset = len(dataset)
+    #     n_dev = math.ceil(len(dataset)*0.05)
+    #     n_test = math.ceil(len(dataset)*0.05)
+    #     n_train = n_dataset - n_test - n_dev
+    #     train_dataset, dev_dataset, test_dataset = torch.utils.data.random_split(dataset, (n_train, n_dev, n_test))
         
-        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=dataset.collate_fn)
+    #     self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=dataset.collate_fn)
 
-        self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=dataset.collate_fn)
+    #     self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=dataset.collate_fn)
 
-        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=dataset.collate_fn)
+    #     self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=dataset.collate_fn)
 
 
     def build_model(self):
         super().build_model()
-        gnn_encoder = GATEncoder(PROJECTION_DIM,64,16,8,0.3)
-        self.models['graph'] = DeepVGAE(gnn_encoder).to(self.device)
+        self.models['gnn_encoder'] = GATEncoder(PROJECTION_DIM,64,16,8,0.3)
+        self.models['graph'] = DeepVGAE(self.models['gnn_encoder']).to(self.device)
 
     def train_epoch(self,epoch):
         self.setTrain()

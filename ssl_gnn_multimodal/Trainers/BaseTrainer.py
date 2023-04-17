@@ -64,9 +64,15 @@ class BaseTrainer():
         print("Optimizer:",self.optimizer) 
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=200)
 
-    def setTrain(self):
+    def setTrain(self,model_keys=[]):
+        evalKeys = []
+        if model_keys is not None and len(model_keys)>0:
+            evalKeys = self.models.keys() - model_keys
         for model in self.models.values():
             model.train()
+        
+        for key in evalKeys:
+            self.models[key].eval()
 
     def setEval(self):
         for model in self.models.values():
