@@ -8,7 +8,7 @@ from pathlib import Path
 class ConceptualCaptionDataset(torch.utils.data.Dataset):
     def __init__(self,data_path,image_transform,tokenizer) -> None:
         super().__init__()
-        self.data = glob("../datasets/cc12m/*/*.jpg", recursive = True)
+        self.data = glob(os.path.join(data_path,"*/*.jpg"), recursive = True)
         self.data_dir = data_path
         self.image_transform = image_transform
         self.tokenizer = tokenizer     
@@ -18,8 +18,8 @@ class ConceptualCaptionDataset(torch.utils.data.Dataset):
     
     def __getitem__(self, index):
         # Load images on the fly.
-        image = Image.open(os.path.join(self.data[index])).convert("RGB")
-        text_file_path = os.path.basename(self.data[index]).replace("jpg","txt")
+        image = Image.open(self.data[index]).convert("RGB")
+        text_file_path = self.data[index].replace("jpg","txt")
         text = Path(text_file_path).read_text().replace('\n','')
         
         return image, text
@@ -32,6 +32,7 @@ class ConceptualCaptionDataset(torch.utils.data.Dataset):
 
         # Tokenized Text Tensor 
         encoded_queries = self.tokenizer([row[1] for row in batch])
+        print(encoded_queries)
         lens = [len(row) for row in encoded_queries['input_ids']]
         text_tensor = torch.zeros(len(batch),max(lens),dtype=torch.long)
         attention_mask = torch.zeros(len(batch),max(lens),dtype=torch.long)
