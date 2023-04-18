@@ -50,9 +50,9 @@ class GAT(torch.nn.Module):
 
         normFn = get_normalization(norm_type)
         activation = get_activation(activation_type)
-        self.gat_layers = []
-        self.norms = []
-        self.acts = []
+        self.gat_layers = torch.nn.ModuleList()
+        self.norms = torch.nn.ModuleList()
+        self.acts = torch.nn.ModuleList()
         if num_layers == 1:
             self.gat_layers.append(GATv2Conv(in_channels, out_channels,out_heads,dropout=dropout))
             self.norms.append(torch.nn.Identity())
