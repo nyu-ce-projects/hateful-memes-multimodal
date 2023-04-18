@@ -10,7 +10,9 @@ import os
 
 import time
 from tqdm import tqdm
-
+from Dataset import load_dataset
+from torch.utils.data import DataLoader
+from utils import get_device
 
 class BaseTrainer():
     def __init__(self,args) -> None:
@@ -22,8 +24,8 @@ class BaseTrainer():
         self.num_workers = args.workers
         self.epochs = self.args.epochs
         self.batch_size = self.args.batchsize
+        self.dataset_name = self.args.dataset
         self.data_path = self.args.data_path
-        self.n_gpus = 1
         self.best_acc = 0
         self.best_auc = 0
         self.set_device()
@@ -36,22 +38,32 @@ class BaseTrainer():
             self.totalTrainableParams += sum(p.numel() for p in self.models[key].parameters() if p.requires_grad)    
 
     def set_device(self):
+        self.n_gpus = 1
         if self.args.cpu is not False:
             self.device = 'cpu'
         else:
-            if torch.cuda.is_available():
-                self.device = 'cuda' 
-                self.n_gpus = torch.cuda.device_count()
-            elif torch.backends.mps.is_available():
-                self.device = 'mps'
-            else:
-                self.device = 'cpu'
-            
+            self.device , self.n_gpus = get_device()
         print(self.device)
 
+    def enable_multi_gpu(self):
+        if self.device in ['cuda','mps'] and self.n_gpus>1:
+            for key, model in self.models.items():
+                if key!='graph':
+                    self.models[key] = torch.nn.DataParallel(model)
+                # else:
+                #     self.models[key] = DataParallel(model)
+                # cudnn.benchmark = True
+
     def load_dataset(self):
-        raise NotImplementedError
+        train_dataset,dev_dataset,test_dataset,collate_fn = load_dataset(self.dataset_name,self.data_path) 
         
+        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=collate_fn)
+
+        self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=collate_fn)
+
+        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=collate_fn)
+
+
     def setup_optimizer_losses(self):
         # self.criterion = nn.CrossEntropyLoss()
         self.criterion = nn.BCEWithLogitsLoss()  #BCEWithLogitsLoss() #nn.CrossEntropyLoss()
@@ -111,6 +123,7 @@ class BaseTrainer():
                     os.makedirs(outpath)
                 
                     print('Saving..')
+                    print("Saved Model - Metrics",metrics)
                     for name, model in self.models.items():
                         savePath = os.path.join(outpath, "{}.pth".format(name))
                         toSave = model.state_dict()

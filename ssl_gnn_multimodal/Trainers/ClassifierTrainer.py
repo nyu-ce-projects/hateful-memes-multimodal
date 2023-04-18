@@ -1,7 +1,7 @@
 import os
 import torch
 from Trainers.MMGNNTrainer import MMGNNTrainer
-from Models.DeepVGAE import DeepVGAE,GCNEncoder,GATEncoder
+from Models.DeepVGAE import DeepVGAE,GCNVGAEEncoder,GATVGAEEncoder
 from Models.GraphClassifier import GraphClassifier
 import numpy as np
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, average_precision_score
@@ -21,8 +21,8 @@ class ClassifierTrainer(MMGNNTrainer):
     
     def build_model(self):
         super().build_model()
-        # gnn_encoder = GCNEncoder(PROJECTION_DIM,64,16)
-        self.models['gnn_encoder'] = GATEncoder(PROJECTION_DIM,64,16,8,0.3)
+        # gnn_encoder = GCNVGAEEncoder(PROJECTION_DIM,64,16)
+        self.models['gnn_encoder'] = GATVGAEEncoder(PROJECTION_DIM,512,1024,4,0.3)
         self.models['graph'] = DeepVGAE(self.models['gnn_encoder']).to(self.device)
         max_num_nodes_in_graph = 12
         self.models['readout_aggregation'] = MLPAggregation(16,16,max_num_nodes_in_graph,num_layers=1)

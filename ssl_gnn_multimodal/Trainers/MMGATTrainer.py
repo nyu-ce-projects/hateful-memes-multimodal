@@ -1,5 +1,5 @@
 
-from Models.GAT import GAT
+from Models.GAT import GATClassifier
 from Trainers import MMGNNTrainer
 
 PROJECTION_DIM = 256
@@ -14,4 +14,4 @@ class MMGATTrainer(MMGNNTrainer):
 
     def build_model(self):
         super().build_model()
-        self.models['graph'] = GAT(PROJECTION_DIM,num_classes=1).to(self.device)
+        self.models['graph'] = GATClassifier(PROJECTION_DIM,num_classes=1).to(self.device)

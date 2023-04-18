@@ -27,31 +27,11 @@ class MMGNNTrainer(BaseTrainer):
 
         self.load_dataset()
         self.build_model()
+        
         self.getTrainableParams()
         self.setup_optimizer_losses()
         if args.resume:
             self.load_checkpoint()
-
-    def load_dataset(self):
-        # Data
-        print('==> Preparing data..')
-        image_transform = torchvision.transforms.Compose(
-            [
-                torchvision.transforms.Resize(size=(224, 224)),
-                torchvision.transforms.ToTensor()
-            ]
-        )
-        # model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
-        # tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
-        tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
-        train_dataset = HatefulMemeDataset(self.data_path,'train',image_transform,tokenizer)
-        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=train_dataset.collate_fn)
-
-        dev_dataset = HatefulMemeDataset(self.data_path,'dev',image_transform,tokenizer)
-        self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=dev_dataset.collate_fn)
-
-        test_dataset = HatefulMemeDataset(self.data_path,'test',image_transform,tokenizer)
-        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=test_dataset.collate_fn)
 
     def build_model(self):
         # Model
@@ -64,13 +44,8 @@ class MMGNNTrainer(BaseTrainer):
             'graph': GCNClassifier(PROJECTION_DIM,1).to(self.device)
         }
         self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True).to(self.device).eval()
-        if self.device in ['cuda','mps'] and self.n_gpus>1:
-            for key, model in self.models.items():
-                if key!='graph':
-                    self.models[key] = torch.nn.DataParallel(model)
-                # else:
-                #     self.models[key] = DataParallel(model)
-                # cudnn.benchmark = True
+        self.enable_multi_gpu()
+
     def train_epoch(self,epoch):
         self.setTrain()
         train_loss = 0
@@ -175,9 +150,7 @@ class MMGNNTrainer(BaseTrainer):
             "accuracy": round(accuracy_score(out_label_ids, preds),3),
             "auc": round(roc_auc_score(out_label_ids, proba),3),
             "micro_f1": round(f1_score(out_label_ids, preds, average="micro"),3),
-            "prediction": preds,
-            "labels": out_label_ids,
-            "proba": proba
+            "prediction": preds
         }
         print("{} --- Epoch : {} | Accuracy : {} | Loss : {} | AUC : {}".format(data_type, epoch,result['accuracy'],result['loss'],result['auc']))    
         return result
