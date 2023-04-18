@@ -15,6 +15,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', '-m',default='MMGCN', type=str)
     # parser.add_argument('--task', '-t',default='train_e_e', type=str,help='')
     parser.add_argument('--data_path', '-d',default='./data', type=str)
+    parser.add_argument('--dataset', '-ds',default='HatefulMeme', type=str)
     
     args = parser.parse_args()
     
