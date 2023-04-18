@@ -78,7 +78,7 @@ class GMAE(GAE):
         return out_x, (mask_nodes, keep_nodes)
     
     def mask_attr_prediction(self, x, edge_index):
-        use_x, (mask_nodes, keep_nodes) = self.encoding_mask(x, self._mask_rate)
+        use_x, (mask_nodes, keep_nodes) = self.encoding_mask(x)
 
         if self._drop_edge_rate > 0:
             use_edge_index, masked_edges = dropout_edge(edge_index, self._drop_edge_rate)

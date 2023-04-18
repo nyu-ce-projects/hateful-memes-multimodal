@@ -1,7 +1,7 @@
 
 import argparse
 
-from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer,VGAETrainer,ClassifierTrainer
+from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer,VGAETrainer,ClassifierTrainer,GMAETrainer,SuperGATTrainer
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
@@ -29,6 +29,10 @@ if __name__ == "__main__":
         net = VGAETrainer(args)
     elif args.model=="MLP_EMBED_CLASSIFIER":
         net = ClassifierTrainer(args)
+    elif args.model=="GMAE":
+        net = GMAETrainer(args)
+    elif args.model=="SUPERGAT":
+        net = SuperGATTrainer(args)
     print(args.model,"============================================")
     net.train()
 

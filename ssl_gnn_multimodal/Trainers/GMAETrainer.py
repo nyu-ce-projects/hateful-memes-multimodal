@@ -25,7 +25,7 @@ class GMAETrainer(MMGNNTrainer):
             'image_projection': ProjectionHead(2048,PROJECTION_DIM).to(self.device),
             'text_projection': ProjectionHead(768,PROJECTION_DIM).to(self.device),
             'graph_encoder': GAT(in_channels=PROJECTION_DIM,hidden_channels=512,out_channels=1024,num_layers=3,in_heads=4,out_heads=1).to(self.device),
-            'graph_decoder':GAT(in_channels=1024,out_channels=PROJECTION_DIM,num_layers=1,in_heads=1,out_heads=1).to(self.device)
+            'graph_decoder':GAT(in_channels=1024,hidden_channels=512,out_channels=PROJECTION_DIM,num_layers=1,in_heads=1,out_heads=1).to(self.device)
         }
         self.models['graph'] = GMAE(self.models['graph_encoder'],self.models['graph_decoder']).to(self.device)
         self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True).to(self.device).eval()

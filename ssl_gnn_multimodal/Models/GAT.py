@@ -38,7 +38,7 @@ class GATClassifier(torch.nn.Module):
     
 
 class GAT(torch.nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels,num_layers,in_heads,out_heads,norm_type="graphnorm",activation_type="prelu",dropout=0.3):
+    def __init__(self, in_channels, hidden_channels, out_channels,num_layers,in_heads,out_heads,norm_type="graph_norm",activation_type="prelu",dropout=0.3):
         super(GAT, self).__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
