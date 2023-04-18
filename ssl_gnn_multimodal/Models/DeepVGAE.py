@@ -6,7 +6,7 @@ from torch_geometric.nn.models import InnerProductDecoder, VGAE
 from torch_geometric.nn.conv import GCNConv,GATv2Conv
 from torch_geometric.nn.norm import GraphNorm,BatchNorm
 from torch_geometric.utils import negative_sampling, remove_self_loops, add_self_loops
-
+from torch_geometric.nn import JumpingKnowledge, GATConv
 
 class GCNVGAEEncoder(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels):
@@ -25,12 +25,12 @@ class GATVGAEEncoder(nn.Module):
     def __init__(self, in_channels, hidden_channels, out_channels,nheads,dropout):
         super(GATVGAEEncoder, self).__init__()
         self.gcn_shared = GATv2Conv(in_channels, hidden_channels,nheads,dropout=dropout)
-
+        self.jump = JumpingKnowledge(mode='cat')
         self.gcn_mu = GATv2Conv(hidden_channels*nheads, out_channels,1,dropout=dropout)
         self.gcn_logvar = GATv2Conv(hidden_channels*nheads, out_channels,1,dropout=dropout)
 
     def forward(self, x, edge_index):
-        x = F.relu(self.gcn_shared(x, edge_index))
+        x = self.jump(F.relu(self.gcn_shared(x, edge_index)))
         mu = self.gcn_mu(x, edge_index)
         logvar = self.gcn_logvar(x, edge_index)
         return mu, logvar

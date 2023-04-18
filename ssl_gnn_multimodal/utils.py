@@ -5,7 +5,7 @@ from torch.nn import Module
 from torch_geometric.nn import BatchNorm,GraphNorm
 
 def get_device():
-    n_gpus = 0
+    n_gpus = 1
     if torch.cuda.is_available():
         device = 'cuda' 
         n_gpus = torch.cuda.device_count()

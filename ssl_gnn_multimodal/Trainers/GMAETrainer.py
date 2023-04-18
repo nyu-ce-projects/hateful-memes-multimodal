@@ -15,7 +15,10 @@ PROJECTION_DIM = 256
 class GMAETrainer(MMGNNTrainer):
     def __init__(self, args) -> None:
         super().__init__(args)
-
+        self.build_model()
+        self.getTrainableParams()
+        self.setup_optimizer_losses()
+        
     def build_model(self):
         # Model
         print('==> Building model..')
