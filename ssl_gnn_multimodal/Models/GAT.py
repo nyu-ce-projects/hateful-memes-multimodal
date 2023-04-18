@@ -60,13 +60,13 @@ class GAT(torch.nn.Module):
         else:
             # input projection
             self.gat_layers.append(GATv2Conv(in_channels, hidden_channels,in_heads,dropout=dropout))
-            self.norms.append(normFn(hidden_channels))
+            self.norms.append(normFn(hidden_channels*in_heads))
             self.acts.append(activation)
             # hidden layers
             for l in range(1, num_layers - 1):
                 # due to multi-head, the in_dim = num_hidden * num_heads
                 self.gat_layers.append(GATv2Conv(hidden_channels*in_heads, hidden_channels,in_heads,dropout=dropout))
-                self.norms.append(normFn(hidden_channels))
+                self.norms.append(normFn(hidden_channels*in_heads))
                 self.acts.append(activation)
 
             # output projection

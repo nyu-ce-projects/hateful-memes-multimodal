@@ -19,7 +19,7 @@ class GMAE(GAE):
         self._drop_edge_rate = 0.0
         self._concat_hidden = concat_hidden
         self.enc_mask_token = nn.Parameter(torch.zeros(1, encoder.in_channels))
-        
+        self._decoder_type = None #TODO :Unused
         
         if self._concat_hidden:
             self.encoder_to_decoder = nn.Linear(decoder.in_channels * encoder.num_layers, decoder.in_channels, bias=False)
