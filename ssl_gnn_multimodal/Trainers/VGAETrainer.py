@@ -88,11 +88,11 @@ class VGAETrainer(MMGNNTrainer):
                 g_data = g_data.to(self.device)
 
                 z = self.models['graph'].encode(g_data.x, g_data.edge_index)
-
+                
                 if self.pretrain is True:
                 # Pretraining  
                     loss = self.models['graph'].loss(z, g_data)
-                    roc_auc,ap_score,micro_f1,accuracy = self.models['graph'].metrics(z, g_data)
+                    roc_auc,ap_score = self.models['graph'].metrics(z, g_data)
                     
                 else:
                 # hateful classification
@@ -100,22 +100,26 @@ class VGAETrainer(MMGNNTrainer):
                     loss = self.criterion(output, g_data.y)
                     # Metrics Calculation
                     roc_auc,ap_score,micro_f1,accuracy = self.models['classifier'].metrics(output,labels)
+                    micro_f1s.append(micro_f1)
+                    accuracies.append(accuracy)
 
                 test_loss += loss.item()
                 total += labels.size(0)
 
                 roc_auc_scores.append(roc_auc)
                 ap_scores.append(ap_score)
-                micro_f1s.append(micro_f1)
-                accuracies.append(accuracy)
 
         metrics = {
             "loss": test_loss/total,
-            "accuracy": round(np.mean(accuracies),3),
             "auc": round(np.mean(roc_auc_scores),3),
-            "micro_f1": round(np.mean(micro_f1s),3),
             "avg_precision": round(np.mean(ap_scores),3)
         }
+        if len(accuracies)>0:
+            metrics['accuracy'] = round(np.mean(accuracies),3)
+        
+        if len(micro_f1s)>0:
+            metrics['micro_f1'] = round(np.mean(micro_f1s),3)
+
         print("{} --- Epoch : {} | roc_auc_score : {} | average_precision_score : {}".format(data_type,epoch,metrics['auc'],metrics['avg_precision']))    
         return metrics                       
 

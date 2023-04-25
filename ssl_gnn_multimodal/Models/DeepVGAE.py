@@ -63,4 +63,4 @@ class DeepVGAE(VGAE):
 
         y, pred = y.detach().cpu().numpy(), pred.detach().cpu().numpy()    
 
-        return roc_auc_score(y, pred), average_precision_score(y, pred),f1_score(y, pred, average="micro"),accuracy_score(y, pred)
+        return roc_auc_score(y, pred), average_precision_score(y, pred)
