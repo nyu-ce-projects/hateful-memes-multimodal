@@ -17,9 +17,9 @@ def load_dataset(dataset_name,data_path,image_transform=None,tokenizer=None):
                 ]
             )
     if tokenizer is None:
-        model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
-        tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
-        # tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+        # model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
+        # tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
+        tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
 
     if dataset_name=="HatefulMeme":
         train_dataset = HatefulMemeDataset(data_path,'train',image_transform,tokenizer)

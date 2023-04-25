@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:2
 #SBATCH --time=24:10:00
 #SBATCH --mem=64GB
-#SBATCH --job-name=vgae_classifier_multigpu
+#SBATCH --job-name=logs/vgae_classifier_multigpu
 
 module purge
 module load anaconda3/2020.07

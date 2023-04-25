@@ -2,7 +2,7 @@ data/*
 .ipynb_checkpoints/*
 */.ipynb_checkpoints/*
 checkpoints/*
-logs/*.out
+logs/*
 *.pyc
 slurm-*.out
 *.zip
