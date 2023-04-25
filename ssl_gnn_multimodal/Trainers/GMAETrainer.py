@@ -10,8 +10,7 @@ from Trainers import MMGNNTrainer
 from Models.Encoder import ImageEncoder,TextEncoder,ProjectionHead
 from Models.GMAE import GMAE
 from Models.GAT import GAT
-
-PROJECTION_DIM = 256
+from config import PROJECTION_DIM
 class GMAETrainer(MMGNNTrainer):
     def __init__(self, args) -> None:
         super().__init__(args)

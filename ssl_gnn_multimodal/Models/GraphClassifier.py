@@ -3,6 +3,7 @@ from torch.nn import Sequential,Linear,ReLU,BatchNorm1d
 import torch.nn.functional as F
 from torch_geometric.nn import global_mean_pool
 from torch_geometric.nn import MLP, MLPAggregation,SetTransformerAggregation
+from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, average_precision_score
 
 class GraphClassifier(torch.nn.Module):
     def __init__(self, in_channels, out_channels, num_layers,aggrFn=global_mean_pool, batch_norm=True,
@@ -47,3 +48,9 @@ class GraphClassifier(torch.nn.Module):
             self.__class__.__name__, self.in_channels, self.out_channels,
             self.num_layers, self.batch_norm, self.dropout)
     
+    def metrics(self,output,labels):
+        preds = torch.sigmoid(output).detach().cpu().numpy() > 0.5
+        proba = torch.sigmoid(output).detach().cpu().numpy()
+        out_label_ids = labels.detach().cpu().numpy()
+        
+        return roc_auc_score(out_label_ids,proba),average_precision_score(out_label_ids,preds),f1_score(out_label_ids, preds, average="micro"),accuracy_score(out_label_ids, preds)

@@ -26,6 +26,7 @@ class BaseTrainer():
         self.batch_size = self.args.batchsize
         self.dataset_name = self.args.dataset
         self.data_path = self.args.data_path
+        self.pretrain = self.args.pretrain
         self.best_acc = 0
         self.best_auc = 0
         self.set_device()

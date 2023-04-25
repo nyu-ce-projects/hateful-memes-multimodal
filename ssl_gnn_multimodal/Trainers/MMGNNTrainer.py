@@ -19,7 +19,7 @@ import torch_geometric.transforms as T
 
 import numpy as np
 
-PROJECTION_DIM = 256
+from config import PROJECTION_DIM
 
 class MMGNNTrainer(BaseTrainer):
     def __init__(self, args) -> None:

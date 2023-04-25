@@ -1,7 +1,7 @@
 from Models.SAGE import GraphSAGE
 from Trainers import MMGNNTrainer
 
-PROJECTION_DIM = 256
+from config import PROJECTION_DIM
 
 class MMSAGETrainer(MMGNNTrainer):
     def __init__(self, args) -> None:

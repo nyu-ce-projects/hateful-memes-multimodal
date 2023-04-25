@@ -1,9 +1,9 @@
 
 import argparse
-
+import torch
 from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer,VGAETrainer,ClassifierTrainer,GMAETrainer,SuperGATTrainer
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
     parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
     parser.add_argument('--resume', '-r', help='resume from checkpoint')
@@ -16,6 +16,8 @@ if __name__ == "__main__":
     # parser.add_argument('--task', '-t',default='train_e_e', type=str,help='')
     parser.add_argument('--data_path', '-d',default='./data', type=str)
     parser.add_argument('--dataset', '-ds',default='HatefulMeme', type=str)
+    parser.add_argument('--pretrain', '-pt',action='store_true')
+    
     
     args = parser.parse_args()
     
@@ -25,10 +27,8 @@ if __name__ == "__main__":
         net = MMGATTrainer(args)
     elif args.model=='MMSAGE':
         net = MMSAGETrainer(args)
-    elif args.model=="VGAE_UNSUPERVISED":
+    elif args.model=="VGAE":
         net = VGAETrainer(args)
-    elif args.model=="MLP_EMBED_CLASSIFIER":
-        net = ClassifierTrainer(args)
     elif args.model=="GMAE":
         net = GMAETrainer(args)
     elif args.model=="SUPERGAT":
@@ -38,3 +38,11 @@ if __name__ == "__main__":
 
     
     print("Model Training Completed")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        torch.cuda.empty_cache()
+        raise e

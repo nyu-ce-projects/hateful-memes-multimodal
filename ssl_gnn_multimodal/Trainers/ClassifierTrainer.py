@@ -6,8 +6,7 @@ from Models.GraphClassifier import GraphClassifier
 import numpy as np
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, average_precision_score
 from torch_geometric.nn import MLP, MLPAggregation,SetTransformerAggregation,DeepSetsAggregation,GRUAggregation
-
-PROJECTION_DIM = 256
+from config import PROJECTION_DIM
 
 class ClassifierTrainer(MMGNNTrainer):
     def __init__(self,args) -> None:

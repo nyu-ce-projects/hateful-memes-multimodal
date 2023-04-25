@@ -1,8 +1,7 @@
 
 from Models.GAT import GATClassifier
 from Trainers import MMGNNTrainer
-
-PROJECTION_DIM = 256
+from config import PROJECTION_DIM
 
 class MMGATTrainer(MMGNNTrainer):
     def __init__(self, args) -> None:

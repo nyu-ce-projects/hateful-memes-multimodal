@@ -1,12 +1,15 @@
 import os
 from Models.DeepVGAE import DeepVGAE,GCNVGAEEncoder,GATVGAEEncoder
 from Trainers import MMGNNTrainer
+from Models.GraphClassifier import GraphClassifier
+
 import torch
 from torch_geometric.utils import negative_sampling
+from torch_geometric.nn import MLP, MLPAggregation,SetTransformerAggregation,DeepSetsAggregation,GRUAggregation
 from sklearn.metrics import average_precision_score, roc_auc_score
 import numpy as np
+from config import PROJECTION_DIM
 
-PROJECTION_DIM = 256
 
 class VGAETrainer(MMGNNTrainer):
     def __init__(self, args) -> None:
@@ -21,6 +24,11 @@ class VGAETrainer(MMGNNTrainer):
         super().build_model()
         self.models['gnn_encoder'] = GATVGAEEncoder(PROJECTION_DIM,512,1024,4,0.3)
         self.models['graph'] = DeepVGAE(self.models['gnn_encoder']).to(self.device)
+        if self.pretrain is not True:
+            max_num_nodes_in_graph = 12
+            self.models['readout_aggregation'] = MLPAggregation(1024,1024,max_num_nodes_in_graph,num_layers=1)
+            self.models['classifier'] = GraphClassifier(1024,1, 2,self.models['readout_aggregation'], True,0.5).to(self.device)
+    
 
     def train_epoch(self,epoch):
         self.setTrain()
@@ -39,9 +47,16 @@ class VGAETrainer(MMGNNTrainer):
             g_data = next(iter(g_data_loader))
             g_data = g_data.to(self.device)
             
-            
             z = self.models['graph'].encode(g_data.x, g_data.edge_index)
-            loss = self.models['graph'].recon_loss(z, g_data.edge_index) + (1 / g_data.num_nodes) * self.models['graph'].kl_loss()
+            
+            if self.pretrain is True:
+            # Pretraining  
+                loss = self.models['graph'].loss(z, g_data)
+            else:
+            # hateful classification
+                output = self.models['classifier'](z,g_data)
+                loss = self.criterion(output, g_data.y)
+            
             loss.backward()
             self.optimizer.step()
             
@@ -54,8 +69,11 @@ class VGAETrainer(MMGNNTrainer):
     
     def evaluate(self, epoch, data_type, data_loader):
         self.setEval()
+        test_loss = 0
         roc_auc_scores = []
         ap_scores = []
+        micro_f1s = []
+        accuracies = []
         with torch.no_grad():
             for images, tokenized_text, attention_masks, labels in data_loader:
                 images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
@@ -71,28 +89,35 @@ class VGAETrainer(MMGNNTrainer):
 
                 z = self.models['graph'].encode(g_data.x, g_data.edge_index)
 
-                neg_edge_index = negative_sampling(g_data.edge_index, z.size(0))
-                # metrics = self.models['graph'].test(z, g_data.edge_index, neg_edge_index)
-                pos_y = z.new_ones(g_data.edge_index.size(1))
-                neg_y = z.new_zeros(neg_edge_index.size(1))
-                y = torch.cat([pos_y, neg_y], dim=0)
+                if self.pretrain is True:
+                # Pretraining  
+                    loss = self.models['graph'].loss(z, g_data)
+                    roc_auc,ap_score,micro_f1,accuracy = self.models['graph'].metrics(z, g_data)
+                    
+                else:
+                # hateful classification
+                    output = self.models['classifier'](z,g_data)
+                    loss = self.criterion(output, g_data.y)
+                    # Metrics Calculation
+                    roc_auc,ap_score,micro_f1,accuracy = self.models['classifier'].metrics(output,labels)
 
-                pos_pred = self.models['graph'].decoder(z, g_data.edge_index, sigmoid=True)
-                neg_pred = self.models['graph'].decoder(z, neg_edge_index, sigmoid=True)
-                pred = torch.cat([pos_pred, neg_pred], dim=0)
+                test_loss += loss.item()
+                total += labels.size(0)
 
-                y, pred = y.detach().cpu().numpy(), pred.detach().cpu().numpy()
-                
-                roc_auc,ap_score =  roc_auc_score(y, pred), average_precision_score(y, pred)
                 roc_auc_scores.append(roc_auc)
                 ap_scores.append(ap_score)
+                micro_f1s.append(micro_f1)
+                accuracies.append(accuracy)
 
-
-        print("{} --- Epoch : {} | roc_auc_score : {} | average_precision_score : {}".format(data_type,epoch,np.mean(roc_auc_scores),np.mean(ap_scores)))    
-        return {
-            "auc":np.mean(roc_auc_scores),
-            "avg_precision":np.mean(ap_scores)
+        metrics = {
+            "loss": test_loss/total,
+            "accuracy": round(np.mean(accuracies),3),
+            "auc": round(np.mean(roc_auc_scores),3),
+            "micro_f1": round(np.mean(micro_f1s),3),
+            "avg_precision": round(np.mean(ap_scores),3)
         }
+        print("{} --- Epoch : {} | roc_auc_score : {} | average_precision_score : {}".format(data_type,epoch,metrics['auc'],metrics['avg_precision']))    
+        return metrics                       
 
     def save_checkpoint(self,epoch, metrics):
         try:
