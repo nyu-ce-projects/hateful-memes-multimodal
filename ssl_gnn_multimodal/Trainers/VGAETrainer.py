@@ -70,6 +70,7 @@ class VGAETrainer(MMGNNTrainer):
     def evaluate(self, epoch, data_type, data_loader):
         self.setEval()
         test_loss = 0
+        total = 0
         roc_auc_scores = []
         ap_scores = []
         micro_f1s = []
