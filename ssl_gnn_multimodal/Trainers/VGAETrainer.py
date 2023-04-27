@@ -14,6 +14,7 @@ from config import PROJECTION_DIM
 class VGAETrainer(MMGNNTrainer):
     def __init__(self, args) -> None:
         super().__init__(args)
+        print("Trainable Models",self.trainable_models)
 
     def build_model(self):
         super().build_model()
