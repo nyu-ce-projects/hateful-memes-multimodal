@@ -18,14 +18,14 @@ class VGAETrainer(MMGNNTrainer):
 
     def build_model(self):
         super().build_model()
-        self.trainable_models = ['image_encoder','text_encoder','image_projection','text_projection','graph','gnn_encoder']
+        self.trainable_models = ['image_encoder','text_encoder','image_projection','text_projection','graph']
         self.models['gnn_encoder'] = GATVGAEEncoder(PROJECTION_DIM,512,1024,4,0.3)
         self.models['graph'] = DeepVGAE(self.models['gnn_encoder']).to(self.device)
         if self.pretrain is not True:
             max_num_nodes_in_graph = 12
             self.models['readout_aggregation'] = MLPAggregation(1024,1024,max_num_nodes_in_graph,num_layers=1)
             self.models['classifier'] = GraphClassifier(1024,1, 2,self.models['readout_aggregation'], True,0.5).to(self.device)
-            self.trainable_models = ['gnn_encoder','graph','readout_aggregation','classifier']
+            self.trainable_models = ['graph','classifier']
 
     
 
@@ -164,9 +164,9 @@ class VGAETrainer(MMGNNTrainer):
                     os.makedirs(outpath)
                 
                     print('Saving..')
-                    for name, model in self.models.items():
+                    for name in self.trainable_models:
                         savePath = os.path.join(outpath, "{}.pth".format(name))
-                        toSave = model.state_dict()
+                        toSave = self.models[name].state_dict()
                         torch.save(toSave, savePath)
                     savePath = os.path.join(outpath, "{}.pth".format(self.optim.lower()))
                     torch.save(self.optimizer.state_dict(), savePath)

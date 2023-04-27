@@ -49,11 +49,11 @@ class BaseTrainer():
 
     def enable_multi_gpu(self):
         if self.device in ['cuda','mps'] and self.n_gpus>1:
-            for key, model in self.models.items():
+            for key in self.trainable_models:
                 if key!='graph':
-                    self.models[key] = torch.nn.DataParallel(model)
+                    self.models[key] = torch.nn.DataParallel(self.models[key])
                 # else:
-                #     self.models[key] = DataParallel(model)
+                #     self.models[key] = DataParallel(self.models[key])
                 # cudnn.benchmark = True
 
     def load_dataset(self):
@@ -82,8 +82,8 @@ class BaseTrainer():
         evalKeys = []
         if model_keys is not None and len(model_keys)>0:
             evalKeys = self.models.keys() - model_keys
-        for model in self.models.values():
-            model.train()
+        for key in self.model_keys:
+            self.models[key].train()
         
         for key in evalKeys:
             self.models[key].eval()
@@ -126,9 +126,9 @@ class BaseTrainer():
                 
                     print('Saving..')
                     print("Saved Model - Metrics",metrics)
-                    for name, model in self.models.items():
+                    for name in self.trainable_models:
                         savePath = os.path.join(outpath, "{}.pth".format(name))
-                        toSave = model.state_dict()
+                        toSave = self.models[name].state_dict()
                         torch.save(toSave, savePath)
                     savePath = os.path.join(outpath, "{}.pth".format(self.optim.lower()))
                     torch.save(self.optimizer.state_dict(), savePath)

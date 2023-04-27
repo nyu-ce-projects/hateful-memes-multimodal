@@ -217,8 +217,7 @@ class MMGNNTrainer(BaseTrainer):
             print(checkpoint_dir)
             assert os.path.isdir(checkpoint_dir), 'Error: no checkpoint directory found!'
 
-            model_keys = ['image_encoder','text_encoder','image_projection','text_projection','graph']
-            for key in model_keys:
+            for key in self.trainable_models:
                 model_path = os.path.join(checkpoint_dir,"{}.pth".format(key))
                 checkpoint = torch.load(model_path,map_location=self.device)
                 remove_prefix = 'module.'
