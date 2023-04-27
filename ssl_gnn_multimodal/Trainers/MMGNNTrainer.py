@@ -44,14 +44,15 @@ class MMGNNTrainer(BaseTrainer):
             'text_projection': ProjectionHead(768,PROJECTION_DIM).to(self.device),
             'graph': GCNClassifier(PROJECTION_DIM,1).to(self.device)
         }
+        self.trainable_models = ['image_encoder','text_encoder','image_projection','text_projection','graph']
         self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(
-            weights=MaskRCNN_ResNet50_FPN_V2_Weights.DEFAULT,
+            weights=MaskRCNN_ResNet50_FPN_Weights.DEFAULT,
             weights_backbone=ResNet50_Weights.DEFAULT
         ).to(self.device).eval()
         self.enable_multi_gpu()
 
     def train_epoch(self,epoch):
-        self.setTrain()
+        self.setTrain(self.trainable_models)
         train_loss = 0
         total = 0
         preds = None

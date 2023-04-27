@@ -15,19 +15,21 @@ class VGAETrainer(MMGNNTrainer):
     def __init__(self, args) -> None:
         super().__init__(args)
 
-
     def build_model(self):
         super().build_model()
+        self.trainable_models = ['image_encoder','text_encoder','image_projection','text_projection','graph','gnn_encoder']
         self.models['gnn_encoder'] = GATVGAEEncoder(PROJECTION_DIM,512,1024,4,0.3)
         self.models['graph'] = DeepVGAE(self.models['gnn_encoder']).to(self.device)
         if self.pretrain is not True:
             max_num_nodes_in_graph = 12
             self.models['readout_aggregation'] = MLPAggregation(1024,1024,max_num_nodes_in_graph,num_layers=1)
             self.models['classifier'] = GraphClassifier(1024,1, 2,self.models['readout_aggregation'], True,0.5).to(self.device)
+            self.trainable_models = ['gnn_encoder','graph','readout_aggregation','classifier']
+
     
 
     def train_epoch(self,epoch):
-        self.setTrain()
+        self.setTrain(self.trainable_models)
         train_loss = 0
         total = 0
         for images, tokenized_text, attention_masks, labels in self.train_loader:
