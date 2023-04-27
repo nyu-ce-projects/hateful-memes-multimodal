@@ -98,8 +98,8 @@ class VGAETrainer(MMGNNTrainer):
                     neg_y = z.new_zeros(neg_edge_index.size(1))
                     y = torch.cat([pos_y, neg_y], dim=0)
 
-                    pos_pred = self.decoder(z, g_data.edge_index, sigmoid=True)
-                    neg_pred = self.decoder(z, neg_edge_index, sigmoid=True)
+                    pos_pred = self.models['graph'].decoder(z, g_data.edge_index, sigmoid=True)
+                    neg_pred = self.models['graph'].decoder(z, neg_edge_index, sigmoid=True)
                     pred = torch.cat([pos_pred, neg_pred], dim=0)
                     if proba is None:
                         proba = pred.detach().cpu().numpy() 
