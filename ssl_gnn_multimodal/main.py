@@ -1,7 +1,7 @@
 
 import argparse
 import torch
-from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer,VGAETrainer,ClassifierTrainer,GMAETrainer,SuperGATTrainer
+from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer,VGAETrainer,GMAETrainer,SuperGATTrainer
 
 def main():
     parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')

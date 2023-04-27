@@ -164,7 +164,10 @@ class MMGNNTrainer(BaseTrainer):
         embeddings = []
         outputs = self.imgfeatureModel(imgTensors)
         for i,output in enumerate(outputs):
-            indices = torch.argsort(output['scores'])[-10:] #get top 10 features
+            if sum(output['scores']>0.4)>=5: #get features with more than 40% confidence score upto 20 features
+                    indices = torch.argsort((output['scores']*(output['scores']>0.4)))[-20:]
+            else:
+                indices = torch.argsort(output['scores'])[-5:] #get top 5 features
             masks = output['masks'][indices]
             embd = self.models['image_projection'](self.models['image_encoder'](masks*imgTensors[i]))
             embeddings.append(embd)
