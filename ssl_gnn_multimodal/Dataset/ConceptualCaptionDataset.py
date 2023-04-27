@@ -2,27 +2,28 @@ import os
 import json
 import torch
 from PIL import Image
+from glob import glob
+from pathlib import Path
 
-class HatefulMemeDataset(torch.utils.data.Dataset):
-    def __init__(self,data_path,data_type, image_transform, tokenizer) -> None:
+class ConceptualCaptionDataset(torch.utils.data.Dataset):
+    def __init__(self,data_path,image_transform,tokenizer) -> None:
         super().__init__()
-        self.data = [json.loads(l) for l in open(os.path.join(data_path,data_type+'.jsonl'))]
+        self.data = [img_path for img_path in glob(os.path.join(data_path,"*/*.jpg"), recursive = True) if os.path.exists(img_path.replace("jpg","txt"))]
         self.data_dir = data_path
         self.image_transform = image_transform
-        self.tokenizer = tokenizer       
+        self.tokenizer = tokenizer     
 
     def __len__(self):
         return len(self.data)
-
+    
     def __getitem__(self, index):
         # Load images on the fly.
-        # print(os.path.join(self.data_dir, self.data[index]["img"]))
-        image = Image.open(os.path.join(self.data_dir, self.data[index]["img"])).convert("RGB")
-        text = self.data[index]["text"]
-        label = self.data[index]["label"]
+        image = Image.open(self.data[index]).convert("RGB")
+        text_file_path = self.data[index].replace("jpg","txt")
+        text = Path(text_file_path).read_text().replace('\n','')
         
-        return image, text, label
-
+        return image, text, -1
+    
     def collate_fn(self,batch):
         # Image Tensor
         tensor_img = torch.stack(
@@ -31,6 +32,7 @@ class HatefulMemeDataset(torch.utils.data.Dataset):
 
         # Tokenized Text Tensor 
         encoded_queries = self.tokenizer([row[1] for row in batch])
+        # print(encoded_queries)
         lens = [len(row) for row in encoded_queries['input_ids']]
         text_tensor = torch.zeros(len(batch),max(lens),dtype=torch.long)
         attention_mask = torch.zeros(len(batch),max(lens),dtype=torch.long)
@@ -40,7 +42,6 @@ class HatefulMemeDataset(torch.utils.data.Dataset):
             text_tensor[i_batch, :length] = torch.tensor(encoded_queries['input_ids'][i_batch])
             attention_mask[i_batch, :length] = torch.tensor(encoded_queries['attention_mask'][i_batch])
         
-
         #Label Tensor
         label_tensor = torch.stack([torch.tensor([row[2]],dtype=torch.float32) for row in batch])
 

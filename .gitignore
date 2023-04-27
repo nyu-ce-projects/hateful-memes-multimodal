@@ -1,6 +1,9 @@
 data/*
-*/*/*.pyc
 .ipynb_checkpoints/*
 */.ipynb_checkpoints/*
 checkpoints/*
-logs/*.out
+logs/*
+*.pyc
+slurm-*.out
+*.zip
+ssl_gnn_multimodal/Dataset/hateful_memes/*

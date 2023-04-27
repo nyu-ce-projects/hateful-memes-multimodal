@@ -10,7 +10,9 @@ import os
 
 import time
 from tqdm import tqdm
-
+from Dataset import load_dataset
+from torch.utils.data import DataLoader
+from utils import get_device
 
 class BaseTrainer():
     def __init__(self,args) -> None:
@@ -22,36 +24,50 @@ class BaseTrainer():
         self.num_workers = args.workers
         self.epochs = self.args.epochs
         self.batch_size = self.args.batchsize
-        self.n_gpus = 1
+        self.dataset_name = self.args.dataset
+        self.data_path = self.args.data_path
+        self.pretrain = self.args.pretrain
         self.best_acc = 0
         self.best_auc = 0
+        self.trainable_models = []
         self.set_device()
         
     def getTrainableParams(self):
         self.totalTrainableParams = 0
         self.trainableParameters = []
-        for key in self.models:
+        for key in self.trainable_models:
             self.trainableParameters += list(self.models[key].parameters())
             self.totalTrainableParams += sum(p.numel() for p in self.models[key].parameters() if p.requires_grad)    
 
     def set_device(self):
+        self.n_gpus = 1
         if self.args.cpu is not False:
             self.device = 'cpu'
         else:
-            if torch.cuda.is_available():
-                self.device = 'cuda' 
-                self.n_gpus = torch.cuda.device_count()
-            elif torch.backends.mps.is_available():
-                self.device = 'mps'
-            else:
-                self.device = 'cpu'
-            
+            self.device , self.n_gpus = get_device()
         print(self.device)
 
+    def enable_multi_gpu(self):
+        if self.device in ['cuda','mps'] and self.n_gpus>1:
+            for key in self.trainable_models:
+                if key!='graph':
+                    self.models[key] = torch.nn.DataParallel(self.models[key])
+                # else:
+                #     self.models[key] = DataParallel(self.models[key])
+                # cudnn.benchmark = True
+
     def load_dataset(self):
-        raise NotImplementedError
+        train_dataset,dev_dataset,test_dataset,collate_fn = load_dataset(self.dataset_name,self.data_path) 
         
+        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=collate_fn)
+
+        self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=collate_fn)
+
+        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=collate_fn)
+
+
     def setup_optimizer_losses(self):
+        # self.criterion = nn.CrossEntropyLoss()
         self.criterion = nn.BCEWithLogitsLoss()  #BCEWithLogitsLoss() #nn.CrossEntropyLoss()
         if self.optim=='SGD':
             self.optimizer = optim.SGD(self.trainableParameters, lr=self.lr,momentum=0.9, weight_decay=5e-4)
@@ -62,9 +78,15 @@ class BaseTrainer():
         print("Optimizer:",self.optimizer) 
         self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=200)
 
-    def setTrain(self):
-        for model in self.models.values():
-            model.train()
+    def setTrain(self,model_keys=[]):
+        evalKeys = []
+        if model_keys is not None and len(model_keys)>0:
+            evalKeys = self.models.keys() - model_keys
+        for key in model_keys:
+            self.models[key].train()
+        
+        for key in evalKeys:
+            self.models[key].eval()
 
     def setEval(self):
         for model in self.models.values():
@@ -103,9 +125,10 @@ class BaseTrainer():
                     os.makedirs(outpath)
                 
                     print('Saving..')
-                    for name, model in self.models.items():
+                    print("Saved Model - Metrics",metrics)
+                    for name in self.trainable_models:
                         savePath = os.path.join(outpath, "{}.pth".format(name))
-                        toSave = model.state_dict()
+                        toSave = self.models[name].state_dict()
                         torch.save(toSave, savePath)
                     savePath = os.path.join(outpath, "{}.pth".format(self.optim.lower()))
                     torch.save(self.optimizer.state_dict(), savePath)

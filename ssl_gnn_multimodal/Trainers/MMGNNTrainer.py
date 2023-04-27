@@ -2,7 +2,8 @@ import os
 import torch
 # import torch.backends.cudnn as cudnn
 import torchvision
-from torchvision import models
+from torchvision.models.detection import MaskRCNN_ResNet50_FPN_Weights,MaskRCNN_ResNet50_FPN_V2_Weights
+from torchvision.models.resnet import ResNet50_Weights
 from Trainers.BaseTrainer import BaseTrainer
 from Models.Encoder import ImageEncoder,TextEncoder,ProjectionHead
 from Models.GCN import GCN,GCNClassifier
@@ -19,7 +20,7 @@ import torch_geometric.transforms as T
 
 import numpy as np
 
-PROJECTION_DIM = 256
+from config import PROJECTION_DIM
 
 class MMGNNTrainer(BaseTrainer):
     def __init__(self, args) -> None:
@@ -27,51 +28,31 @@ class MMGNNTrainer(BaseTrainer):
 
         self.load_dataset()
         self.build_model()
+        
         self.getTrainableParams()
         self.setup_optimizer_losses()
         if args.resume:
             self.load_checkpoint()
 
-    def load_dataset(self):
-        # Data
-        print('==> Preparing data..')
-        image_transform = torchvision.transforms.Compose(
-            [
-                torchvision.transforms.Resize(size=(224, 224)),
-                torchvision.transforms.ToTensor()
-            ]
-        )
-        # model_name = 'Hate-speech-CNERG/bert-base-uncased-hatexplain'
-        # tokenizer = AutoTokenizer.from_pretrained(model_name, do_lower_case=True)
-        tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
-        train_dataset = HatefulMemeDataset('./data','train',image_transform,tokenizer)
-        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=True, num_workers=self.num_workers,collate_fn=train_dataset.collate_fn)
-
-        dev_dataset = HatefulMemeDataset('./data','dev',image_transform,tokenizer)
-        self.dev_loader = DataLoader(dev_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=dev_dataset.collate_fn)
-
-        test_dataset = HatefulMemeDataset('./data','test',image_transform,tokenizer)
-        self.test_loader = DataLoader(test_dataset, batch_size=self.batch_size*self.n_gpus, shuffle=False, num_workers=self.num_workers,collate_fn=test_dataset.collate_fn)
-
     def build_model(self):
         # Model
         print('==> Building model..')
-        self.models = {}
-        self.models['image_encoder'] = ImageEncoder().to(self.device)
-        self.models['text_encoder'] = TextEncoder().to(self.device)
-        self.models['image_projection'] = ProjectionHead(2048,PROJECTION_DIM).to(self.device)
-        self.models['text_projection'] = ProjectionHead(768,PROJECTION_DIM).to(self.device)
-        self.models['graph'] = GCNClassifier(PROJECTION_DIM,1).to(self.device)
-        self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True).to(self.device).eval()
-        if self.device in ['cuda','mps'] and self.n_gpus>1:
-            for key, model in self.models.items():
-                if key!='graph':
-                    self.models[key] = torch.nn.DataParallel(model)
-                # else:
-                #     self.models[key] = DataParallel(model)
-                # cudnn.benchmark = True
+        self.models = {
+            'image_encoder': ImageEncoder().to(self.device),
+            'text_encoder': TextEncoder().to(self.device),
+            'image_projection': ProjectionHead(2048,PROJECTION_DIM).to(self.device),
+            'text_projection': ProjectionHead(768,PROJECTION_DIM).to(self.device),
+            'graph': GCNClassifier(PROJECTION_DIM,1).to(self.device)
+        }
+        self.trainable_models = ['image_encoder','text_encoder','image_projection','text_projection','graph']
+        self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(
+            weights=MaskRCNN_ResNet50_FPN_Weights.DEFAULT,
+            weights_backbone=ResNet50_Weights.DEFAULT
+        ).to(self.device).eval()
+        self.enable_multi_gpu()
+
     def train_epoch(self,epoch):
-        self.setTrain()
+        self.setTrain(self.trainable_models)
         train_loss = 0
         total = 0
         preds = None
@@ -81,7 +62,7 @@ class MMGNNTrainer(BaseTrainer):
             images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
             self.optimizer.zero_grad()
-            
+            # images, image_features, text_features,labels
             text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
             image_feat_embeddings = self.get_image_feature_embeddings(images)
             image_embeddings = self.models['image_projection'](self.models['image_encoder'](images))
@@ -174,9 +155,7 @@ class MMGNNTrainer(BaseTrainer):
             "accuracy": round(accuracy_score(out_label_ids, preds),3),
             "auc": round(roc_auc_score(out_label_ids, proba),3),
             "micro_f1": round(f1_score(out_label_ids, preds, average="micro"),3),
-            "prediction": preds,
-            "labels": out_label_ids,
-            "proba": proba
+            "prediction": preds
         }
         print("{} --- Epoch : {} | Accuracy : {} | Loss : {} | AUC : {}".format(data_type, epoch,result['accuracy'],result['loss'],result['auc']))    
         return result
@@ -185,7 +164,10 @@ class MMGNNTrainer(BaseTrainer):
         embeddings = []
         outputs = self.imgfeatureModel(imgTensors)
         for i,output in enumerate(outputs):
-            indices = torch.argsort(output['scores'])[-10:] #get top 10 features
+            if sum(output['scores']>0.4)>=5: #get features with more than 40% confidence score upto 20 features
+                    indices = torch.argsort((output['scores']*(output['scores']>0.4)))[-20:]
+            else:
+                indices = torch.argsort(output['scores'])[-5:] #get top 5 features
             masks = output['masks'][indices]
             embd = self.models['image_projection'](self.models['image_encoder'](masks*imgTensors[i]))
             embeddings.append(embd)
@@ -227,7 +209,7 @@ class MMGNNTrainer(BaseTrainer):
             data_list.append(data)
         
         loader = GDataLoader(data_list, batch_size=self.batch_size*self.n_gpus)
-        # return Batch.from_data_list(data_list)
+        # return Batch().from_data_list(data_list)
         return loader
 
     def load_checkpoint(self):
@@ -238,8 +220,7 @@ class MMGNNTrainer(BaseTrainer):
             print(checkpoint_dir)
             assert os.path.isdir(checkpoint_dir), 'Error: no checkpoint directory found!'
 
-            model_keys = ['image_encoder','text_encoder','image_projection','text_projection','graph']
-            for key in model_keys:
+            for key in self.trainable_models:
                 model_path = os.path.join(checkpoint_dir,"{}.pth".format(key))
                 checkpoint = torch.load(model_path,map_location=self.device)
                 remove_prefix = 'module.'

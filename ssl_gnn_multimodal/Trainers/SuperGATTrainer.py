@@ -1,0 +1,3 @@
+
+class SuperGATTrainer():
+    pass

@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "ssl-gnn-multimodal"
+version = "0.1.0"
+description = ""
+authors = ["Akash Mishra <akash.mishra13@gmail.com>"]
+readme = "README.md"
+packages = [{include = "ssl_gnn_multimodal"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+torch = "^2.0.0"
+torchvision = "^0.15.1"
+torchaudio = "^2.0.1"
+torch-geometric = "^2.2.0"
+timm = "^0.6.13"
+transformers = "^4.27.4"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.22.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

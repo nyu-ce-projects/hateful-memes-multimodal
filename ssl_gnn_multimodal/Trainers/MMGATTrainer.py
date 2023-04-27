@@ -1,9 +1,9 @@
-from Models.SAGE import GraphSAGE
+
+from Models.GAT import GATClassifier
 from Trainers import MMGNNTrainer
+from config import PROJECTION_DIM
 
-PROJECTION_DIM = 256
-
-class MMSAGETrainer(MMGNNTrainer):
+class MMGATTrainer(MMGNNTrainer):
     def __init__(self, args) -> None:
         super().__init__(args)
 
@@ -13,4 +13,4 @@ class MMSAGETrainer(MMGNNTrainer):
 
     def build_model(self):
         super().build_model()
-        self.models['graph'] = GraphSAGE(PROJECTION_DIM,64,1).to(self.device)
+        self.models['graph'] = GATClassifier(PROJECTION_DIM,num_classes=1).to(self.device)

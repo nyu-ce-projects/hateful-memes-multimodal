@@ -1,10 +1,9 @@
-
-from Models.GAT import GAT
+from Models.SAGE import GraphSAGE
 from Trainers import MMGNNTrainer
 
-PROJECTION_DIM = 256
+from config import PROJECTION_DIM
 
-class MMGATTrainer(MMGNNTrainer):
+class MMSAGETrainer(MMGNNTrainer):
     def __init__(self, args) -> None:
         super().__init__(args)
 
@@ -14,4 +13,4 @@ class MMGATTrainer(MMGNNTrainer):
 
     def build_model(self):
         super().build_model()
-        self.models['graph'] = GAT(PROJECTION_DIM,num_classes=1).to(self.device)
+        self.models['graph'] = GraphSAGE(PROJECTION_DIM,64,1).to(self.device)
