@@ -1,0 +1,62 @@
+Some weights of the model checkpoint at distilbert-base-uncased were not used when initializing DistilBertModel: ['vocab_layer_norm.weight', 'vocab_layer_norm.bias', 'vocab_transform.weight', 'vocab_transform.bias', 'vocab_projector.bias', 'vocab_projector.weight']
+- This IS expected if you are initializing DistilBertModel from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DistilBertModel from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+/scratch/am11533/conda-envs/ssl-gnn-env/lib/python3.8/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/scratch/am11533/conda-envs/ssl-gnn-env/lib/python3.8/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=MaskRCNN_ResNet50_FPN_Weights.COCO_V1`. You can also use `weights=MaskRCNN_ResNet50_FPN_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+/scratch/am11533/conda-envs/ssl-gnn-env/lib/python3.8/site-packages/torch/optim/adam.py:33: UserWarning: optimizer contains a parameter group with duplicate parameters; in future, this will cause an error; see github.com/pytorch/pytorch/issues/40967 for more information
+  super().__init__(params, defaults)
+Some weights of the model checkpoint at distilbert-base-uncased were not used when initializing DistilBertModel: ['vocab_layer_norm.weight', 'vocab_layer_norm.bias', 'vocab_transform.weight', 'vocab_transform.bias', 'vocab_projector.bias', 'vocab_projector.weight']
+- This IS expected if you are initializing DistilBertModel from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing DistilBertModel from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Namespace(batchsize=16, cpu=False, data_path='../datasets/cc12m/', dataset='ConceptualCaption', epochs=20, lr=0.01, model='GMAE', optim='Adam', resume=None, workers=4)
+cuda
+==> Preparing data..
+==> Building model..
+Optimizer: Adam (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.01
+    maximize: False
+    weight_decay: 0.0005
+)
+==> Building model..
+Optimizer: Adam (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    capturable: False
+    differentiable: False
+    eps: 1e-08
+    foreach: None
+    fused: None
+    lr: 0.01
+    maximize: False
+    weight_decay: 0.0005
+)
+GMAE ============================================
+Total Trainable Parameters : 120152898
+  0%|          | 0/20 [00:00<?, ?it/s]  0%|          | 0/20 [5:53:26<?, ?it/s]
+Traceback (most recent call last):
+  File "ssl_gnn_multimodal/main.py", line 37, in <module>
+    net.train()
+  File "/scratch/am11533/ssl-gnn-multimodal/ssl_gnn_multimodal/Trainers/BaseTrainer.py", line 101, in train
+    self.train_epoch(epoch)
+  File "/scratch/am11533/ssl-gnn-multimodal/ssl_gnn_multimodal/Trainers/GMAETrainer.py", line 53, in train_epoch
+    loss,_ = self.models['graph'](g_data.x,g_data.edge_index)
+  File "/scratch/am11533/conda-envs/ssl-gnn-env/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/scratch/am11533/ssl-gnn-multimodal/ssl_gnn_multimodal/Models/GMAE.py", line 113, in forward
+    loss = self.mask_attr_prediction(x, edge_index)
+  File "/scratch/am11533/ssl-gnn-multimodal/ssl_gnn_multimodal/Models/GMAE.py", line 81, in mask_attr_prediction
+    use_x, (mask_nodes, keep_nodes) = self.encoding_mask(x)
+  File "/scratch/am11533/ssl-gnn-multimodal/ssl_gnn_multimodal/Models/GMAE.py", line 70, in encoding_mask
+    out_x[noise_nodes] = x[noise_to_be_chosen]
+RuntimeError: shape mismatch: value tensor of shape [0, 256] cannot be broadcast to indexing result of shape [3, 256]
