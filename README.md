@@ -16,15 +16,15 @@ There has been a sharp increase in the number of people using social media recen
 - torchcontrib
 - pytorch lightning
 
-### Dataset
-Hateful Meme Challenge 
-Conceptual Caption Dataset -> https://www.kaggle.com/datasets/danielkaplan/conceptual-captions-8m12m | https://ai.google.com/research/ConceptualCaptions/download 
+
+### Traing the Unimodal and Multimodal Networks
+Notebook has been provided for these networks in the `notebook/` directory.
+
 
 
 ### Training the Multimodal Graph Network
 ```
 python main.py --batchsize 16 --epochs 1 --optim Adam --model MMSAGE --workers 4 --lr 0.01
-python ssl_gnn_multimodal/main.py --batchsize 16 --epochs 1 --optim Adam --model VGAE --workers 4 --lr 0.01 --data_path ../datasets/hateful-dataset/data/
 ```
 
 Graph Models Available:

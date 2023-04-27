@@ -1,9 +1,9 @@
 
 import argparse
-import torch
-from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer,VGAETrainer,GMAETrainer,SuperGATTrainer
 
-def main():
+from Trainers import MMGNNTrainer,MMGATTrainer,MMSAGETrainer
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
     parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
     parser.add_argument('--resume', '-r', help='resume from checkpoint')
@@ -13,11 +13,6 @@ def main():
     parser.add_argument('--optim', '-o',default='SGD', type=str,help='optimizer type')
     parser.add_argument('--batchsize', '-bs',default=8, type=int,help='Batch Size')
     parser.add_argument('--model', '-m',default='MMGCN', type=str)
-    # parser.add_argument('--task', '-t',default='train_e_e', type=str,help='')
-    parser.add_argument('--data_path', '-d',default='./data', type=str)
-    parser.add_argument('--dataset', '-ds',default='HatefulMeme', type=str)
-    parser.add_argument('--pretrain', '-pt',action='store_true')
-    
     
     args = parser.parse_args()
     
@@ -27,22 +22,8 @@ def main():
         net = MMGATTrainer(args)
     elif args.model=='MMSAGE':
         net = MMSAGETrainer(args)
-    elif args.model=="VGAE":
-        net = VGAETrainer(args)
-    elif args.model=="GMAE":
-        net = GMAETrainer(args)
-    elif args.model=="SUPERGAT":
-        net = SuperGATTrainer(args)
     print(args.model,"============================================")
     net.train()
 
     
     print("Model Training Completed")
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        torch.cuda.empty_cache()
-        raise e
