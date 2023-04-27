@@ -82,7 +82,7 @@ class BaseTrainer():
         evalKeys = []
         if model_keys is not None and len(model_keys)>0:
             evalKeys = self.models.keys() - model_keys
-        for key in self.model_keys:
+        for key in model_keys:
             self.models[key].train()
         
         for key in evalKeys:
