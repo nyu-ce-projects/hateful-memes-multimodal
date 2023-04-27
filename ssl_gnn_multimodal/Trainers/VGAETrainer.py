@@ -8,7 +8,7 @@ from torch_geometric.utils import negative_sampling
 from torch_geometric.nn import MLP, MLPAggregation,SetTransformerAggregation,DeepSetsAggregation,GRUAggregation
 from sklearn.metrics import average_precision_score, roc_auc_score,accuracy_score,f1_score
 import numpy as np
-from config import PROJECTION_DIM
+from config import PROJECTION_DIM,GNN_OUT_CHANNELS
 
 
 class VGAETrainer(MMGNNTrainer):
@@ -19,11 +19,11 @@ class VGAETrainer(MMGNNTrainer):
     def build_model(self):
         super().build_model()
         self.trainable_models = ['image_encoder','text_encoder','image_projection','text_projection','graph']
-        self.models['gnn_encoder'] = GATVGAEEncoder(PROJECTION_DIM,512,1024,4,0.3)
+        self.models['gnn_encoder'] = GATVGAEEncoder(PROJECTION_DIM,2*GNN_OUT_CHANNELS,GNN_OUT_CHANNELS,4,0.3)
         self.models['graph'] = DeepVGAE(self.models['gnn_encoder']).to(self.device)
         if self.pretrain is not True:
             max_num_nodes_in_graph = 12
-            self.models['readout_aggregation'] = MLPAggregation(1024,1024,max_num_nodes_in_graph,num_layers=1)
+            self.models['readout_aggregation'] = MLPAggregation(GNN_OUT_CHANNELS,2*GNN_OUT_CHANNELS,max_num_nodes_in_graph,num_layers=1)
             self.models['classifier'] = GraphClassifier(1024,1, 2,self.models['readout_aggregation'], True,0.5).to(self.device)
             self.trainable_models = ['graph','classifier']
 
@@ -37,7 +37,7 @@ class VGAETrainer(MMGNNTrainer):
             images, tokenized_text, attention_masks, labels = images.to(self.device), tokenized_text.to(self.device), attention_masks.to(self.device), labels.to(self.device)
             
             self.optimizer.zero_grad()
-            
+            # images, image_features, text_features,labels
             text_embeddings = self.models['text_projection'](self.models['text_encoder'](input_ids=tokenized_text, attention_mask=attention_masks))
             image_feat_embeddings = self.get_image_feature_embeddings(images)
             image_embeddings = self.models['image_projection'](self.models['image_encoder'](images))
