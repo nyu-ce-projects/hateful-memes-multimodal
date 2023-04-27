@@ -15,10 +15,6 @@ class VGAETrainer(MMGNNTrainer):
     def __init__(self, args) -> None:
         super().__init__(args)
 
-        self.build_model()
-        self.getTrainableParams()
-        self.setup_optimizer_losses()
-
 
     def build_model(self):
         super().build_model()
@@ -125,9 +121,12 @@ class VGAETrainer(MMGNNTrainer):
         return metrics                       
 
     def save_checkpoint(self,epoch, metrics):
+        training_type = "classifier"
+        if self.pretrain:
+            training_type = "pretrain"
         try:
             if metrics['auc'] > self.best_auc:
-                outpath = os.path.join('./checkpoints',self.model_name, "{}_{}".format(metrics['auc'],metrics['avg_precision']))
+                outpath = os.path.join('./checkpoints',self.model_name, "{}_{}_{}".format(training_type,metrics['auc'],metrics['avg_precision']))
                 if not os.path.exists(outpath):
                     os.makedirs(outpath)
                 

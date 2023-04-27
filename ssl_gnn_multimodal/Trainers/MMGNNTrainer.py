@@ -2,7 +2,8 @@ import os
 import torch
 # import torch.backends.cudnn as cudnn
 import torchvision
-from torchvision import models
+from torchvision.models.detection import MaskRCNN_ResNet50_FPN_Weights,MaskRCNN_ResNet50_FPN_V2_Weights
+from torchvision.models.resnet import ResNet50_Weights
 from Trainers.BaseTrainer import BaseTrainer
 from Models.Encoder import ImageEncoder,TextEncoder,ProjectionHead
 from Models.GCN import GCN,GCNClassifier
@@ -43,7 +44,10 @@ class MMGNNTrainer(BaseTrainer):
             'text_projection': ProjectionHead(768,PROJECTION_DIM).to(self.device),
             'graph': GCNClassifier(PROJECTION_DIM,1).to(self.device)
         }
-        self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True).to(self.device).eval()
+        self.imgfeatureModel = torchvision.models.detection.maskrcnn_resnet50_fpn(
+            weights=MaskRCNN_ResNet50_FPN_V2_Weights.DEFAULT,
+            weights_backbone=ResNet50_Weights.DEFAULT
+        ).to(self.device).eval()
         self.enable_multi_gpu()
 
     def train_epoch(self,epoch):
