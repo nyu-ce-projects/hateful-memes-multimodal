@@ -29,12 +29,13 @@ class BaseTrainer():
         self.pretrain = self.args.pretrain
         self.best_acc = 0
         self.best_auc = 0
+        self.trainable_models = []
         self.set_device()
         
     def getTrainableParams(self):
         self.totalTrainableParams = 0
         self.trainableParameters = []
-        for key in self.models:
+        for key in self.trainable_models:
             self.trainableParameters += list(self.models[key].parameters())
             self.totalTrainableParams += sum(p.numel() for p in self.models[key].parameters() if p.requires_grad)    
 
